@@ -1,0 +1,28 @@
+# Flutter/Dart 관련
+/flutter
+build/
+.dart_tool/
+.packages
+.pub/
+
+# IDE 관련
+.idea/
+.vscode/
+*.iml
+
+# OS/기타
+.DS_Store
+*.apk
+*.ipa
+
+# 환경 변수
+.env
+.env.local
+.env.development.local
+.env.test.local
+
+# Python/기타
+__pycache__/
+computer-vision/
+*.pt
+*.pt.gz

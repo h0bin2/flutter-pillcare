@@ -1,0 +1,1 @@
+ C:\\Users\\user\\flutter-pillcare\\.dart_tool\\flutter_build\\b73daf1e83ec3895fe1f8dc894c9f9d1\\dart_build_result.json: 

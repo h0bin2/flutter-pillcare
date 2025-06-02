@@ -1,0 +1,558 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.example.flutter_start"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="23"
+9        android:targetSdkVersion="35" />
+10    <!--
+11         The INTERNET permission is required for development. Specifically,
+12         the Flutter tool needs it to communicate with the running application
+13         to allow setting breakpoints, to provide hot reload, etc.
+14    -->
+15    <uses-permission android:name="android.permission.INTERNET" />
+15-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:6:5-66
+15-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:6:22-64
+16    <uses-permission android:name="android.permission.CALL_PHONE" />
+16-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:2:5-68
+16-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:2:22-66
+17    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+17-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:3:5-79
+17-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:3:22-76
+18    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+18-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:4:5-81
+18-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:4:22-78
+19    <uses-permission android:name="android.permission.CAMERA" />
+19-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:5:5-65
+19-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:5:22-62
+20    <!--
+21 Required to query activities that can process text, see:
+22         https://developer.android.com/training/package-visibility and
+23         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+24
+25         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin.
+26    -->
+27    <queries>
+27-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:67:5-72:15
+28        <intent>
+28-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:68:9-71:18
+29            <action android:name="android.intent.action.PROCESS_TEXT" />
+29-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:69:13-72
+29-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:69:21-70
+30
+31            <data android:mimeType="text/plain" />
+31-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+31-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:19-48
+32        </intent>
+33
+34        <package android:name="com.kakao.talk" />
+34-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:9-50
+34-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:18-47
+35        <package android:name="com.kakao.talk.alpha" />
+35-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:9-56
+35-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:18-53
+36        <package android:name="com.kakao.talk.sandbox" />
+36-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:10:9-58
+36-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:10:18-55
+37        <package android:name="com.kakao.onetalk" />
+37-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:9-53
+37-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:18-50
+38        <package android:name="com.locnall.KimGiSa" />
+38-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:9-55
+38-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:18-52
+39        <package android:name="com.lguplus.navi" />
+39-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:13:9-52
+39-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:13:18-49
+40
+41        <intent>
+41-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:15:9-21:18
+42            <action android:name="android.intent.action.VIEW" />
+42-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-65
+42-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:21-62
+43
+44            <category android:name="android.intent.category.BROWSABLE" />
+44-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-74
+44-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:23-71
+45
+46            <data android:scheme="https" />
+46-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+47        </intent>
+48    </queries>
+49
+50    <uses-feature
+50-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:7:5-9:35
+51        android:glEsVersion="0x00020000"
+51-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:8:9-41
+52        android:required="true" />
+52-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:9:9-32
+53    <uses-feature
+53-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:10:5-12:36
+54        android:name="android.hardware.wifi"
+54-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:11:9-45
+55        android:required="false" />
+55-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:12:9-33
+56
+57    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+57-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:15:5-79
+57-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:15:22-76
+58    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+58-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:16:5-76
+58-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:16:22-73
+59    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+59-->[:camera_android] C:\Users\user\flutter-pillcare\build\camera_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:5-71
+59-->[:camera_android] C:\Users\user\flutter-pillcare\build\camera_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:22-68
+60
+61    <permission
+61-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.10.2\transforms\8cf478dec41eed746328fa8046755ba2\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+62        android:name="com.example.flutter_start.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+62-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.10.2\transforms\8cf478dec41eed746328fa8046755ba2\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+63        android:protectionLevel="signature" />
+63-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.10.2\transforms\8cf478dec41eed746328fa8046755ba2\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+64
+65    <uses-permission android:name="com.example.flutter_start.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" /> <!-- To store the heap dumps and leak analysis results. -->
+65-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.10.2\transforms\8cf478dec41eed746328fa8046755ba2\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+65-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.10.2\transforms\8cf478dec41eed746328fa8046755ba2\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+66    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+66-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:25:5-80
+66-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:25:22-77
+67    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- To allow posting notifications on Android 13 -->
+67-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:26:5-81
+67-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:26:22-78
+68    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+68-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:29:5-77
+68-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:29:22-74
+69
+70    <application
+71        android:name="android.app.Application"
+72        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+72-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.10.2\transforms\8cf478dec41eed746328fa8046755ba2\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
+73        android:debuggable="true"
+74        android:extractNativeLibs="false"
+75        android:icon="@mipmap/ic_launcher"
+76        android:label="flutter_start" >
+77        <activity
+78            android:name="com.example.flutter_start.MainActivity"
+79            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+80            android:exported="true"
+81            android:hardwareAccelerated="true"
+82            android:launchMode="singleTop"
+83            android:taskAffinity=""
+84            android:theme="@style/LaunchTheme"
+85            android:windowSoftInputMode="adjustResize" >
+86
+87            <!--
+88                 Specifies an Android theme to apply to this Activity as soon as
+89                 the Android process has started. This theme is visible to the user
+90                 while the Flutter UI initializes. After that, this theme continues
+91                 to determine the Window background behind the Flutter UI.
+92            -->
+93            <meta-data
+94                android:name="io.flutter.embedding.android.NormalTheme"
+95                android:resource="@style/NormalTheme" />
+96            <!-- 네이버 지도 클라이언트 ID 설정 -->
+97            <meta-data
+98                android:name="com.naver.maps.map.NCP_KEY_ID"
+99                android:value="c22uzm0ayz" />
+100
+101            <intent-filter>
+102                <action android:name="android.intent.action.MAIN" />
+102-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:86:17-69
+102-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:86:25-66
+103
+104                <category android:name="android.intent.category.LAUNCHER" />
+104-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:88:17-77
+104-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:88:27-74
+105            </intent-filter>
+106        </activity>
+107        <!-- 카카오 SDK 초기화 설정 -->
+108        <meta-data
+109            android:name="com.kakao.sdk.AppKey"
+110            android:value="kakaof05090355f9d1379adbc5395f7165d18" />
+111
+112        <!-- 카카오 로그인 콜백 액티비티 -->
+113        <activity
+114            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+115            android:exported="true" >
+116            <intent-filter>
+117                <action android:name="android.intent.action.VIEW" />
+117-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-65
+117-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:21-62
+118
+119                <category android:name="android.intent.category.DEFAULT" />
+119-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:52:17-76
+119-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:52:27-73
+120                <category android:name="android.intent.category.BROWSABLE" />
+120-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-74
+120-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:23-71
+121
+122                <!-- Redirect URI: "kakao{YOUR_NATIVE_APP_KEY}://oauth" -->
+123                <data
+123-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+124                    android:host="oauth"
+125                    android:scheme="kakaof05090355f9d1379adbc5395f7165d18" />
+126            </intent-filter>
+127        </activity>
+128        <!--
+129             Don't delete the meta-data below.
+130             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java
+131        -->
+132        <meta-data
+133            android:name="flutterEmbedding"
+134            android:value="2" />
+135
+136        <activity
+136-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:25:9-30:56
+137            android:name="com.kakao.sdk.flutter.TalkAuthCodeActivity"
+137-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:26:13-70
+138            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
+138-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:27:13-81
+139            android:exported="false"
+139-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:28:13-37
+140            android:launchMode="singleTask"
+140-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:29:13-44
+141            android:theme="@style/TransparentCompat" />
+141-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:30:13-53
+142        <activity
+142-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:31:9-35:56
+143            android:name="com.kakao.sdk.flutter.CustomTabsActivity"
+143-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:32:13-68
+144            android:exported="true"
+144-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:33:13-36
+145            android:launchMode="singleTask"
+145-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:34:13-44
+146            android:theme="@style/TransparentCompat" />
+146-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:35:13-53
+147        <activity
+147-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:36:9-40:56
+148            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
+148-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:37:13-76
+149            android:exported="true"
+149-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:38:13-36
+150            android:launchMode="singleTask"
+150-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:39:13-44
+151            android:theme="@style/TransparentCompat" />
+151-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:40:13-53
+152        <activity
+152-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:41:9-45:56
+153            android:name="com.kakao.sdk.flutter.FollowChannelHandlerActivity"
+153-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:42:13-78
+154            android:exported="true"
+154-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:43:13-36
+155            android:launchMode="singleTask"
+155-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:44:13-44
+156            android:theme="@style/TransparentCompat" />
+156-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:45:13-53
+157        <activity
+157-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:46:9-50:56
+158            android:name="com.kakao.sdk.flutter.AppsHandlerActivity"
+158-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:47:13-69
+159            android:exported="true"
+159-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:48:13-36
+160            android:launchMode="singleTask"
+160-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:49:13-44
+161            android:theme="@style/TransparentCompat" />
+161-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:50:13-53
+162        <activity
+162-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:19:9-23:51
+163            android:name="com.naver.maps.map.app.LegendActivity"
+163-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:20:13-65
+164            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+164-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:21:13-91
+165            android:label="@string/navermap_legend"
+165-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:22:13-52
+166            android:theme="@style/navermap_app" />
+166-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:23:13-48
+167        <activity
+167-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:24:9-28:51
+168            android:name="com.naver.maps.map.app.LegalNoticeActivity"
+168-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:25:13-70
+169            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+169-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:26:13-91
+170            android:label="@string/navermap_legal_notice"
+170-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:27:13-58
+171            android:theme="@style/navermap_app" />
+171-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:28:13-48
+172        <activity
+172-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:29:9-33:51
+173            android:name="com.naver.maps.map.app.OpenSourceLicenseActivity"
+173-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:30:13-76
+174            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+174-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:31:13-91
+175            android:label="@string/navermap_open_source_license"
+175-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:32:13-65
+176            android:theme="@style/navermap_app" />
+176-->[com.naver.maps:map-sdk:3.21.0] C:\Users\user\.gradle\caches\8.10.2\transforms\2ae5735b52638942596954cfaeb8f9e9\transformed\jetified-map-sdk-3.21.0\AndroidManifest.xml:33:13-48
+177
+178        <service
+178-->[:geolocator_android] C:\Users\user\flutter-pillcare\build\geolocator_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:9-12:56
+179            android:name="com.baseflow.geolocator.GeolocatorLocationService"
+179-->[:geolocator_android] C:\Users\user\flutter-pillcare\build\geolocator_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:13-77
+180            android:enabled="true"
+180-->[:geolocator_android] C:\Users\user\flutter-pillcare\build\geolocator_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:10:13-35
+181            android:exported="false"
+181-->[:geolocator_android] C:\Users\user\flutter-pillcare\build\geolocator_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:13-37
+182            android:foregroundServiceType="location" />
+182-->[:geolocator_android] C:\Users\user\flutter-pillcare\build\geolocator_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:13-53
+183
+184        <activity
+184-->[:url_launcher_android] C:\Users\user\flutter-pillcare\build\url_launcher_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:9-11:74
+185            android:name="io.flutter.plugins.urllauncher.WebViewActivity"
+185-->[:url_launcher_android] C:\Users\user\flutter-pillcare\build\url_launcher_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:13-74
+186            android:exported="false"
+186-->[:url_launcher_android] C:\Users\user\flutter-pillcare\build\url_launcher_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:10:13-37
+187            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+187-->[:url_launcher_android] C:\Users\user\flutter-pillcare\build\url_launcher_android\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:13-71
+188
+189        <uses-library
+189-->[androidx.window:window:1.2.0] C:\Users\user\.gradle\caches\8.10.2\transforms\5093ab42d2307deb2d7ac0b7f5718c38\transformed\jetified-window-1.2.0\AndroidManifest.xml:23:9-25:40
+190            android:name="androidx.window.extensions"
+190-->[androidx.window:window:1.2.0] C:\Users\user\.gradle\caches\8.10.2\transforms\5093ab42d2307deb2d7ac0b7f5718c38\transformed\jetified-window-1.2.0\AndroidManifest.xml:24:13-54
+191            android:required="false" />
+191-->[androidx.window:window:1.2.0] C:\Users\user\.gradle\caches\8.10.2\transforms\5093ab42d2307deb2d7ac0b7f5718c38\transformed\jetified-window-1.2.0\AndroidManifest.xml:25:13-37
+192        <uses-library
+192-->[androidx.window:window:1.2.0] C:\Users\user\.gradle\caches\8.10.2\transforms\5093ab42d2307deb2d7ac0b7f5718c38\transformed\jetified-window-1.2.0\AndroidManifest.xml:26:9-28:40
+193            android:name="androidx.window.sidecar"
+193-->[androidx.window:window:1.2.0] C:\Users\user\.gradle\caches\8.10.2\transforms\5093ab42d2307deb2d7ac0b7f5718c38\transformed\jetified-window-1.2.0\AndroidManifest.xml:27:13-51
+194            android:required="false" />
+194-->[androidx.window:window:1.2.0] C:\Users\user\.gradle\caches\8.10.2\transforms\5093ab42d2307deb2d7ac0b7f5718c38\transformed\jetified-window-1.2.0\AndroidManifest.xml:28:13-37
+195
+196        <activity
+196-->[com.google.android.gms:play-services-base:18.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\9db9b81a577112600e8d2ee7b5450923\transformed\jetified-play-services-base-18.3.0\AndroidManifest.xml:20:9-22:45
+197            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+197-->[com.google.android.gms:play-services-base:18.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\9db9b81a577112600e8d2ee7b5450923\transformed\jetified-play-services-base-18.3.0\AndroidManifest.xml:20:19-85
+198            android:exported="false"
+198-->[com.google.android.gms:play-services-base:18.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\9db9b81a577112600e8d2ee7b5450923\transformed\jetified-play-services-base-18.3.0\AndroidManifest.xml:22:19-43
+199            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+199-->[com.google.android.gms:play-services-base:18.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\9db9b81a577112600e8d2ee7b5450923\transformed\jetified-play-services-base-18.3.0\AndroidManifest.xml:21:19-78
+200
+201        <meta-data
+201-->[com.google.android.gms:play-services-basement:18.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\abeed4f47a72eff8f5b4e9bf7f2f3c91\transformed\jetified-play-services-basement-18.3.0\AndroidManifest.xml:21:9-23:69
+202            android:name="com.google.android.gms.version"
+202-->[com.google.android.gms:play-services-basement:18.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\abeed4f47a72eff8f5b4e9bf7f2f3c91\transformed\jetified-play-services-basement-18.3.0\AndroidManifest.xml:22:13-58
+203            android:value="@integer/google_play_services_version" />
+203-->[com.google.android.gms:play-services-basement:18.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\abeed4f47a72eff8f5b4e9bf7f2f3c91\transformed\jetified-play-services-basement-18.3.0\AndroidManifest.xml:23:13-66
+204
+205        <provider
+205-->[androidx.emoji2:emoji2:1.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\ddb705a688ef6a1839fd6d53500b0a16\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+206            android:name="androidx.startup.InitializationProvider"
+206-->[androidx.emoji2:emoji2:1.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\ddb705a688ef6a1839fd6d53500b0a16\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:25:13-67
+207            android:authorities="com.example.flutter_start.androidx-startup"
+207-->[androidx.emoji2:emoji2:1.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\ddb705a688ef6a1839fd6d53500b0a16\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:26:13-68
+208            android:exported="false" >
+208-->[androidx.emoji2:emoji2:1.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\ddb705a688ef6a1839fd6d53500b0a16\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:27:13-37
+209            <meta-data
+209-->[androidx.emoji2:emoji2:1.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\ddb705a688ef6a1839fd6d53500b0a16\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+210                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+210-->[androidx.emoji2:emoji2:1.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\ddb705a688ef6a1839fd6d53500b0a16\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:30:17-75
+211                android:value="androidx.startup" />
+211-->[androidx.emoji2:emoji2:1.3.0] C:\Users\user\.gradle\caches\8.10.2\transforms\ddb705a688ef6a1839fd6d53500b0a16\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:31:17-49
+212            <meta-data
+212-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\user\.gradle\caches\8.10.2\transforms\e80aa748ff6540407d8dba61c0d945fe\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+213                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+213-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\user\.gradle\caches\8.10.2\transforms\e80aa748ff6540407d8dba61c0d945fe\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+214                android:value="androidx.startup" />
+214-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\user\.gradle\caches\8.10.2\transforms\e80aa748ff6540407d8dba61c0d945fe\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+215            <meta-data
+215-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+216                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+216-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+217                android:value="androidx.startup" />
+217-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+218        </provider>
+219
+220        <receiver
+220-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+221            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+221-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+222            android:directBootAware="false"
+222-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+223            android:enabled="true"
+223-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+224            android:exported="true"
+224-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+225            android:permission="android.permission.DUMP" >
+225-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+226            <intent-filter>
+226-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+227                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+227-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+227-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+228            </intent-filter>
+229            <intent-filter>
+229-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+230                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+230-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+230-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+231            </intent-filter>
+232            <intent-filter>
+232-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+233                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+233-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+233-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+234            </intent-filter>
+235            <intent-filter>
+235-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+236                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+236-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+236-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\user\.gradle\caches\8.10.2\transforms\5f7dcf6815bacc3ae7f099ba801348de\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+237            </intent-filter>
+238        </receiver>
+239
+240        <provider
+240-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:32:9-40:20
+241            android:name="leakcanary.internal.LeakCanaryFileProvider"
+241-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:33:13-70
+242            android:authorities="com.squareup.leakcanary.fileprovider.com.example.flutter_start"
+242-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:34:13-88
+243            android:exported="false"
+243-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:35:13-37
+244            android:grantUriPermissions="true" >
+244-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:36:13-47
+245            <meta-data
+245-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:37:13-39:66
+246                android:name="android.support.FILE_PROVIDER_PATHS"
+246-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:38:17-67
+247                android:resource="@xml/leak_canary_file_paths" />
+247-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:39:17-63
+248        </provider>
+249
+250        <activity
+250-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:42:9-73:20
+251            android:name="leakcanary.internal.activity.LeakActivity"
+251-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:43:13-69
+252            android:exported="true"
+252-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:44:13-36
+253            android:icon="@mipmap/leak_canary_icon"
+253-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:45:13-52
+254            android:label="@string/leak_canary_display_activity_label"
+254-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:46:13-71
+255            android:taskAffinity="com.squareup.leakcanary.com.example.flutter_start"
+255-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:47:13-76
+256            android:theme="@style/leak_canary_LeakCanary.Base" >
+256-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:48:13-63
+257            <intent-filter android:label="@string/leak_canary_import_hprof_file" >
+257-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:49:13-72:29
+257-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:49:28-81
+258                <action android:name="android.intent.action.VIEW" />
+258-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-65
+258-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:21-62
+259
+260                <category android:name="android.intent.category.DEFAULT" />
+260-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:52:17-76
+260-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:52:27-73
+261                <category android:name="android.intent.category.BROWSABLE" />
+261-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-74
+261-->[:kakao_flutter_sdk_common] C:\Users\user\flutter-pillcare\build\kakao_flutter_sdk_common\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:23-71
+262
+263                <data android:scheme="file" />
+263-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+264                <data android:scheme="content" />
+264-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+265                <data android:mimeType="*/*" />
+265-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+265-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:19-48
+266                <data android:host="*" />
+266-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+267                <data android:pathPattern=".*\\.hprof" />
+267-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+268                <data android:pathPattern=".*\\..*\\.hprof" />
+268-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+269                <data android:pathPattern=".*\\..*\\..*\\.hprof" />
+269-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+270                <data android:pathPattern=".*\\..*\\..*\\..*\\.hprof" />
+270-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+271                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.hprof" />
+271-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+272                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.hprof" />
+272-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+273                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.hprof" />
+273-->C:\Users\user\flutter-pillcare\android\app\src\main\AndroidManifest.xml:70:13-50
+274                <!--
+275            Since hprof isn't a standard MIME type, we have to declare such patterns.
+276            Most file providers will generate URIs including their own package name,
+277            which contains `.` characters that must be explicitly escaped in pathPattern.
+278            @see https://stackoverflow.com/a/31028507/703646
+279                -->
+280            </intent-filter>
+281        </activity>
+282
+283        <activity-alias
+283-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:75:9-92:26
+284            android:name="leakcanary.internal.activity.LeakLauncherActivity"
+284-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:76:13-77
+285            android:banner="@drawable/leak_canary_tv_icon"
+285-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:77:13-59
+286            android:enabled="@bool/leak_canary_add_launcher_icon"
+286-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:78:13-66
+287            android:exported="true"
+287-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:79:13-36
+288            android:icon="@mipmap/leak_canary_icon"
+288-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:80:13-52
+289            android:label="@string/leak_canary_display_activity_label"
+289-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:81:13-71
+290            android:targetActivity="leakcanary.internal.activity.LeakActivity"
+290-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:82:13-79
+291            android:taskAffinity="com.squareup.leakcanary.com.example.flutter_start"
+291-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:83:13-76
+292            android:theme="@style/leak_canary_LeakCanary.Base" >
+292-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:84:13-63
+293            <intent-filter>
+293-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:85:13-91:29
+294                <action android:name="android.intent.action.MAIN" />
+294-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:86:17-69
+294-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:86:25-66
+295
+296                <category android:name="android.intent.category.LAUNCHER" />
+296-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:88:17-77
+296-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:88:27-74
+297                <!-- Android TV launcher intent -->
+298                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+298-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:90:17-86
+298-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:90:27-83
+299            </intent-filter>
+300        </activity-alias>
+301
+302        <activity
+302-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:94:9-100:68
+303            android:name="leakcanary.internal.RequestPermissionActivity"
+303-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:95:13-73
+304            android:excludeFromRecents="true"
+304-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:96:13-46
+305            android:icon="@mipmap/leak_canary_icon"
+305-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:97:13-52
+306            android:label="@string/leak_canary_storage_permission_activity_label"
+306-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:98:13-82
+307            android:taskAffinity="com.squareup.leakcanary.com.example.flutter_start"
+307-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:99:13-76
+308            android:theme="@style/leak_canary_Theme.Transparent" />
+308-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:100:13-65
+309
+310        <receiver android:name="leakcanary.internal.NotificationReceiver" />
+310-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:102:9-77
+310-->[com.squareup.leakcanary:leakcanary-android-core:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\3ece1d1aa983e583500e0ddbacac542a\transformed\jetified-leakcanary-android-core-2.14\AndroidManifest.xml:102:19-74
+311
+312        <provider
+312-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\8abee8b0a8907de841d451ca92fa3035\transformed\jetified-leakcanary-object-watcher-android-2.14\AndroidManifest.xml:8:9-12:40
+313            android:name="leakcanary.internal.MainProcessAppWatcherInstaller"
+313-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\8abee8b0a8907de841d451ca92fa3035\transformed\jetified-leakcanary-object-watcher-android-2.14\AndroidManifest.xml:9:13-78
+314            android:authorities="com.example.flutter_start.leakcanary-installer"
+314-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\8abee8b0a8907de841d451ca92fa3035\transformed\jetified-leakcanary-object-watcher-android-2.14\AndroidManifest.xml:10:13-72
+315            android:enabled="@bool/leak_canary_watcher_auto_install"
+315-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\8abee8b0a8907de841d451ca92fa3035\transformed\jetified-leakcanary-object-watcher-android-2.14\AndroidManifest.xml:11:13-69
+316            android:exported="false" />
+316-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\8abee8b0a8907de841d451ca92fa3035\transformed\jetified-leakcanary-object-watcher-android-2.14\AndroidManifest.xml:12:13-37
+317        <provider
+317-->[com.squareup.leakcanary:plumber-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\1e6570a22029b523842e972c2cdcda57\transformed\jetified-plumber-android-2.14\AndroidManifest.xml:8:9-12:40
+318            android:name="leakcanary.internal.PlumberInstaller"
+318-->[com.squareup.leakcanary:plumber-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\1e6570a22029b523842e972c2cdcda57\transformed\jetified-plumber-android-2.14\AndroidManifest.xml:9:13-64
+319            android:authorities="com.example.flutter_start.plumber-installer"
+319-->[com.squareup.leakcanary:plumber-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\1e6570a22029b523842e972c2cdcda57\transformed\jetified-plumber-android-2.14\AndroidManifest.xml:10:13-69
+320            android:enabled="@bool/leak_canary_plumber_auto_install"
+320-->[com.squareup.leakcanary:plumber-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\1e6570a22029b523842e972c2cdcda57\transformed\jetified-plumber-android-2.14\AndroidManifest.xml:11:13-69
+321            android:exported="false" />
+321-->[com.squareup.leakcanary:plumber-android:2.14] C:\Users\user\.gradle\caches\8.10.2\transforms\1e6570a22029b523842e972c2cdcda57\transformed\jetified-plumber-android-2.14\AndroidManifest.xml:12:13-37
+322    </application>
+323
+324</manifest>

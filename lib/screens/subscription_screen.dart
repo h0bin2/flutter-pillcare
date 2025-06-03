@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
 class SubscriptionScreen extends StatelessWidget {
-  const SubscriptionScreen({Key? key}) : super(key: key);
+  final Map<String, dynamic> pharmacy;
+  const SubscriptionScreen({Key? key, required this.pharmacy}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('정기구독', style: TextStyle(fontFamily: 'NotoSansKR')),
+        title: Text('${pharmacy['name'] ?? '정기구독'}', style: TextStyle(fontFamily: 'NotoSansKR')),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -19,11 +20,10 @@ class SubscriptionScreen extends StatelessWidget {
       body: Column(
         children: [
           const SizedBox(height: 30),
-          // 준비 중 메시지
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              '정기구독 서비스 준비 중입니다.',
+              '${pharmacy['name']} 정기구독 서비스 준비 중입니다.',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

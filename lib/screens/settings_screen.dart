@@ -5,6 +5,7 @@ import 'alarm_settings_screen.dart';
 import 'export_medication_screen.dart';
 import 'font_theme_settings_screen.dart';
 import 'login_screen.dart';
+import 'edit_profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -137,24 +138,6 @@ class SettingsScreen extends StatelessWidget {
                     },
                   ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.text_fields, size: 36),
-              title: const Text(
-                '글씨 크기',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'NotoSansKR',
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right, size: 32),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FontAndThemeSettingsScreen()),
-                );
-              },
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFE0E0E0)),
             ListTile(

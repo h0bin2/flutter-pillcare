@@ -7,6 +7,7 @@ import 'subscription_screen.dart';
 import '../services/auth_service.dart';
 import '../models/user_info.dart';
 import '../constants.dart';
+import 'subscription_form_screen.dart';
 
 Future<void> subscribePharmacy(BuildContext context, Map<String, dynamic> pharmacy) async {
   try {
@@ -840,11 +841,16 @@ class PharmacyDetailScreen extends StatelessWidget {
                                   ),
                                   TextButton(
                                     onPressed: () async {
-                                      await subscribePharmacy(context, pharmacy);
-                                      Navigator.pop(context);
+                                      Navigator.pop(context); // 다이얼로그 닫기
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => SubscriptionFormScreen(pharmacy: pharmacy),
+                                        ),
+                                      );
                                     },
                                     child: Text(
-                                      '신청하기',
+                                      '신청서 작성',
                                       style: TextStyle(
                                         color: Color(0xFFFFB300),
                                         fontSize: 22,

@@ -29,6 +29,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   Timer? _timer;
   late Future<UserInfo?> _userInfoFuture;
   Future<List<ConsultationInfo>>? _consultationHistoryFuture;
+  bool showSearchBar = false;
+  bool _isSearchVisible = false;
+  TextEditingController _searchController = TextEditingController();
+  List<String> recentSearches = [];
+  List<String> filteredSuggestions = [];
 
   Future<void> _makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -258,81 +263,98 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
           ),
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              setState(() {
+                _isSearchVisible = true;
+              });
+            },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                height: 160,
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(
-                    color: Colors.black,
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _currentDate,
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: constraints.maxHeight * 0.1,
-                            fontFamily: 'NotoSansKR',
-                          ),
-                        ),
-                        SizedBox(height: constraints.maxHeight * 0.03),
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              FutureBuilder<UserInfo?>(
-                                future: _userInfoFuture,
-                                builder: (context, snapshot) {
-                                  Widget nameWidget;
-                                  if (snapshot.connectionState == ConnectionState.waiting) {
-                                    nameWidget = SizedBox(
-                                        width: constraints.maxHeight * 0.3,
-                                        height: constraints.maxHeight * 0.3,
-                                        child: CircularProgressIndicator(strokeWidth: 2));
-                                  } else if (snapshot.hasError) {
-                                    printError("Error loading user info in FutureBuilder: \\${snapshot.error}");
-                                    nameWidget = Text('사용자 로딩 오류', style: TextStyle(fontSize: constraints.maxHeight * 0.3, color: Colors.red, fontFamily: 'NotoSansKR'));
-                                  } else if (snapshot.hasData && snapshot.data != null) {
-                                    final userInfo = snapshot.data!;
-                                    nameWidget = Text(
-                                      userInfo.nickname ?? '최순자',
-                                      style: TextStyle(
-                                        fontSize: constraints.maxHeight * 0.3,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF000080),
-                                        fontFamily: 'NotoSansKR',
-                                      ),
-                                    );
-                                  } else {
-                                    nameWidget = Text('방문자', style: TextStyle(fontSize: constraints.maxHeight * 0.3, fontWeight: FontWeight.w900, color: Color(0xFF000080), fontFamily: 'NotoSansKR'));
-                                  }
-                                  return Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 160,
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _currentDate,
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: constraints.maxHeight * 0.1,
+                                fontFamily: 'NotoSansKR',
+                              ),
+                            ),
+                            SizedBox(height: constraints.maxHeight * 0.03),
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  FutureBuilder<UserInfo?>(
+                                    future: _userInfoFuture,
+                                    builder: (context, snapshot) {
+                                      Widget nameWidget;
+                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                        nameWidget = SizedBox(
+                                            width: constraints.maxHeight * 0.3,
+                                            height: constraints.maxHeight * 0.3,
+                                            child: CircularProgressIndicator(strokeWidth: 2));
+                                      } else if (snapshot.hasError) {
+                                        printError("Error loading user info in FutureBuilder: \\${snapshot.error}");
+                                        nameWidget = Text('사용자 로딩 오류', style: TextStyle(fontSize: constraints.maxHeight * 0.3, color: Colors.red, fontFamily: 'NotoSansKR'));
+                                      } else if (snapshot.hasData && snapshot.data != null) {
+                                        final userInfo = snapshot.data!;
+                                        nameWidget = Text(
+                                          userInfo.nickname ?? '최순자',
+                                          style: TextStyle(
+                                            fontSize: constraints.maxHeight * 0.3,
+                                            fontWeight: FontWeight.w900,
+                                            color: Color(0xFF000080),
+                                            fontFamily: 'NotoSansKR',
+                                          ),
+                                        );
+                                      } else {
+                                        nameWidget = Text('방문자', style: TextStyle(fontSize: constraints.maxHeight * 0.3, fontWeight: FontWeight.w900, color: Color(0xFF000080), fontFamily: 'NotoSansKR'));
+                                      }
+                                      return Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          nameWidget,
+                                          Row(
+                                            children: [
+                                              nameWidget,
+                                              Text(
+                                                '님',
+                                                style: TextStyle(
+                                                  fontSize: constraints.maxHeight * 0.2,
+                                                  color: Colors.black,
+                                                  fontFamily: 'NotoSansKR',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: constraints.maxHeight * 0.03),
                                           Text(
-                                            '님',
+                                            '약 드셨나요?',
                                             style: TextStyle(
                                               fontSize: constraints.maxHeight * 0.2,
                                               color: Colors.black,
@@ -340,449 +362,638 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      SizedBox(height: constraints.maxHeight * 0.03),
-                                      Text(
-                                        '약 드셨나요?',
-                                        style: TextStyle(
-                                          fontSize: constraints.maxHeight * 0.2,
-                                          color: Colors.black,
-                                          fontFamily: 'NotoSansKR',
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                              Spacer(),
-                              Container(
-                                width: constraints.maxHeight * 0.8,
-                                height: constraints.maxHeight * 0.8,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.grey.shade300,
-                                    width: 6,
+                                      );
+                                    },
                                   ),
-                                ),
-                                child: FutureBuilder<UserInfo?>(
-                                  future: _userInfoFuture,
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasData && snapshot.data?.profileImageUrl != null && snapshot.data!.profileImageUrl!.isNotEmpty) {
-                                      return CircleAvatar(
-                                        backgroundImage: NetworkImage(snapshot.data!.profileImageUrl!),
-                                        backgroundColor: Colors.transparent,
-                                        radius: (constraints.maxHeight * 0.8) / 2,
-                                      );
-                                    } else {
-                                      return Center(
-                                        child: Icon(Icons.local_florist, color: Color(0xFF000080), size: 36),
-                                      );
-                                    }
-                                  },
-                                ),
+                                  Spacer(),
+                                  Container(
+                                    width: constraints.maxHeight * 0.8,
+                                    height: constraints.maxHeight * 0.8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 6,
+                                      ),
+                                    ),
+                                    child: FutureBuilder<UserInfo?>(
+                                      future: _userInfoFuture,
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData && snapshot.data?.profileImageUrl != null && snapshot.data!.profileImageUrl!.isNotEmpty) {
+                                          return CircleAvatar(
+                                            backgroundImage: NetworkImage(snapshot.data!.profileImageUrl!),
+                                            backgroundColor: Colors.transparent,
+                                            radius: (constraints.maxHeight * 0.8) / 2,
+                                          );
+                                        } else {
+                                          return Center(
+                                            child: Icon(Icons.local_florist, color: Color(0xFF000080), size: 36),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '추천',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black,
-                      fontFamily: 'NotoSansKR',
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: 4),
-              FutureBuilder<List<Map<String, dynamic>>?>(
-                future: RecordService.getRecords(),
-                builder: (context, recordSnapshot) {
-                  if (recordSnapshot.connectionState == ConnectionState.waiting) {
-                    return Container(
-                      width: double.infinity,
-                      height: 80,
-                      alignment: Alignment.center,
-                      child: CircularProgressIndicator(),
-                    );
-                  } else if (recordSnapshot.hasError) {
-                    return Container(
-                      width: double.infinity,
-                      height: 80,
-                      alignment: Alignment.center,
-                      child: Text('복용 기록을 불러오는 중 오류가 발생했습니다.', style: TextStyle(color: Colors.red, fontFamily: 'NotoSansKR')),
-                    );
-                  } else if (!recordSnapshot.hasData || recordSnapshot.data == null || recordSnapshot.data!.isEmpty) {
-                    return Container(
-                      width: double.infinity,
-                      height: 140,
-                      padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFFF3D1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '복용 기록을 진행하면 맞춤형 영양제를 추천드립니다.',
-                          style: TextStyle(fontSize: 24, color: Colors.grey.shade700, fontFamily: 'NotoSansKR'),
+                  SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '추천',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                          fontFamily: 'NotoSansKR',
                         ),
                       ),
-                    );
-                  } else {
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MedicineInfoScreen(
-                              name: '오메가-3',
-                              imagePath: 'assets/omega3.png',
-                              effects: [
-                                '신체 염증을 줄이고 혈액 건강에 도움이 됩니다.',
-                                '혈중 중성지방 감소',
-                                '심혈관 건강 개선',
-                                '눈 건강 유지',
-                              ],
-                              usage: [
-                                '성인: 1일 1~2회, 1회 1캡슐 식후 복용',
-                                '어린이: 의사와 상담 후 복용',
-                              ],
-                              cautions: [
-                                '과다 복용 시 출혈 위험 증가',
-                                '임산부, 수유부는 복용 전 의사와 상담',
-                                '혈액 응고 억제제와 병용 시 주의',
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  FutureBuilder<List<Map<String, dynamic>>?>(
+                    future: RecordService.getRecords(),
+                    builder: (context, recordSnapshot) {
+                      if (recordSnapshot.connectionState == ConnectionState.waiting) {
+                        return Container(
+                          width: double.infinity,
+                          height: 80,
+                          alignment: Alignment.center,
+                          child: CircularProgressIndicator(),
+                        );
+                      } else if (recordSnapshot.hasError) {
+                        return Container(
+                          width: double.infinity,
+                          height: 80,
+                          alignment: Alignment.center,
+                          child: Text('복용 기록을 불러오는 중 오류가 발생했습니다.', style: TextStyle(color: Colors.red, fontFamily: 'NotoSansKR')),
+                        );
+                      } else if (!recordSnapshot.hasData || recordSnapshot.data == null || recordSnapshot.data!.isEmpty) {
+                        return Container(
+                          width: double.infinity,
+                          height: 140,
+                          padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFFF3D1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '복용 기록을 진행하면 맞춤형 영양제를 추천드립니다.',
+                              style: TextStyle(fontSize: 24, color: Colors.grey.shade700, fontFamily: 'NotoSansKR'),
+                            ),
+                          ),
+                        );
+                      } else {
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MedicineInfoScreen(
+                                  name: '오메가-3',
+                                  imagePath: 'assets/omega3.png',
+                                  effects: [
+                                    '신체 염증을 줄이고 혈액 건강에 도움이 됩니다.',
+                                    '혈중 중성지방 감소',
+                                    '심혈관 건강 개선',
+                                    '눈 건강 유지',
+                                  ],
+                                  usage: [
+                                    '성인: 1일 1~2회, 1회 1캡슐 식후 복용',
+                                    '어린이: 의사와 상담 후 복용',
+                                  ],
+                                  cautions: [
+                                    '과다 복용 시 출혈 위험 증가',
+                                    '임산부, 수유부는 복용 전 의사와 상담',
+                                    '혈액 응고 억제제와 병용 시 주의',
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFFD954),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 65,
+                                      height: 65,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        Icons.medication,
+                                        color: Colors.black54,
+                                        size: 40,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      '오메가-3',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.black,
+                                        fontFamily: 'NotoSansKR',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(width: 20),
+                                Flexible(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(right: 12),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '신체 염증을 줄이고 혈액 건강에 도움이 됩니다.',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,
+                                          height: 1.4,
+                                          fontFamily: 'NotoSansKR',
+                                        ),
+                                        textAlign: TextAlign.left,
+                                        softWrap: true,
+                                        overflow: TextOverflow.visible,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         );
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFFFD954),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 65,
-                                  height: 65,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(
-                                    Icons.medication,
-                                    color: Colors.black54,
-                                    size: 40,
-                                  ),
-                                ),
-                                SizedBox(height: 6),
-                                Text(
-                                  '오메가-3',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.black,
-                                    fontFamily: 'NotoSansKR',
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(width: 20),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '신체 염증을 줄이고 혈액 건강에 도움이 됩니다.',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black,
-                                    height: 1.4,
-                                    fontFamily: 'NotoSansKR',
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
+                      }
+                    },
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ConsultationHistoryPage(
+                                consultationHistoryFuture: _consultationHistoryFuture,
                               ),
                             ),
-                          ],
+                          );
+                        },
+                        child: Text(
+                          '최근 상담 내역 >',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                            fontFamily: 'NotoSansKR',                        decorationColor: Color(0xFFFFD954),
+                            decorationThickness: 2,
+                          ),
                         ),
                       ),
-                    );
-                  }
-                },
-              ),
-              SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ConsultationHistoryPage(
-                            consultationHistoryFuture: _consultationHistoryFuture,
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  FutureBuilder<List<ConsultationInfo>>(
+                    future: _consultationHistoryFuture,
+                    builder: (context, snapshot) {
+                      List<ConsultationInfo> consultations = [];
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        printError("Error loading consultation history: \\${snapshot.error}");
+                        return Center(child: Text('상담 내역을 불러오는 중 오류가 발생했습니다.', style: TextStyle(color: Colors.red, fontFamily: 'NotoSansKR')));
+                      } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                        consultations = snapshot.data!.length > 2
+                            ? snapshot.data!.sublist(0, 2)
+                            : snapshot.data!;
+                      }
+                      if (consultations.isEmpty) {
+                        return Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 70, horizontal: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '최근 상담 내역이 없습니다.',
+                              style: TextStyle(fontSize: 16, color: Colors.grey.shade700, fontFamily: 'NotoSansKR'),
+                            ),
+                          ),
+                        );
+                      }
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade500),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.zero,
+                          itemCount: consultations.length,
+                          itemBuilder: (context, index) {
+                            final consultation = consultations[index];
+                            return Container(
+                              padding: EdgeInsets.only(
+                                top: 20,
+                                bottom: index == consultations.length - 1 ? 20 : 20,
+                                left: 20,
+                                right: 20,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              consultation.pharmacyName,
+                                              style: TextStyle(
+                                                fontSize: 26,
+                                                fontWeight: FontWeight.w900,
+                                                fontFamily: 'NotoSansKR',
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              consultation.formattedCreatedAt,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                color: Colors.grey.shade700,
+                                                fontFamily: 'NotoSansKR',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 6),
+                                        Text(
+                                          consultation.history,
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black,
+                                            fontFamily: 'NotoSansKR',
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          separatorBuilder: (context, index) => Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Colors.grey.shade300,
+                            indent: 20,
+                            endIndent: 20,
                           ),
                         ),
                       );
                     },
-                    child: Text(
-                      '최근 상담 내역 >',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black,
-                        fontFamily: 'NotoSansKR',                        decorationColor: Color(0xFFFFD954),
-                        decorationThickness: 2,
-                      ),
-                    ),
                   ),
-                ],
-              ),
-              SizedBox(height: 8),
-              FutureBuilder<List<ConsultationInfo>>(
-                future: _consultationHistoryFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    printError("Error loading consultation history: \\${snapshot.error}");
-                    return Center(child: Text('상담 내역을 불러오는 중 오류가 발생했습니다.', style: TextStyle(color: Colors.red, fontFamily: 'NotoSansKR')));
-                  } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                    final consultations = snapshot.data!.length > 2
-                        ? snapshot.data!.sublist(0, 2)
-                        : snapshot.data!;
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade500),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        itemCount: consultations.length,
-                        itemBuilder: (context, index) {
-                          final consultation = consultations[index];
-                          return Container(
-                            padding: EdgeInsets.only(
-                              top: 20,
-                              bottom: index == consultations.length - 1 ? 20 : 20,
-                              left: 20,
-                              right: 20,
-                            ),
-                            child: Row(
+                  SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Material(
+                        color: Color(0xFFFFD954),
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const HomeScreen()),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: 105,
+                            height: 110,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            consultation.pharmacyName,
-                                            style: TextStyle(
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.w900,
-                                              fontFamily: 'NotoSansKR',
-                                            ),
-                                          ),
-                                          SizedBox(width: 10),
-                                          Text(
-                                            consultation.formattedCreatedAt,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey.shade700,
-                                              fontFamily: 'NotoSansKR',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 6),
-                                      Text(
-                                        consultation.history,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.black,
-                                          fontFamily: 'NotoSansKR',
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
+                                Icon(
+                                  Icons.calendar_today,
+                                  color: Colors.black,
+                                  size: 52,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  '기록',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'NotoSansKR',
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        },
-                        separatorBuilder: (context, index) => Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: Colors.grey.shade300,
-                          indent: 20,
-                          endIndent: 20,
+                          ),
                         ),
                       ),
-                    );
-                  } else {
-                    return Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(vertical: 70, horizontal: 20),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '최근 상담 내역이 없습니다.',
-                          style: TextStyle(fontSize: 16, color: Colors.grey.shade700, fontFamily: 'NotoSansKR'),
+                      Material(
+                        color: Color(0xFFFFD954),
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const CameraScreen()),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: 105,
+                            height: 110,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.camera_alt_outlined,
+                                  color: Colors.black,
+                                  size: 52,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  '카메라',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'NotoSansKR',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    );
-                  }
-                },
-              ),
-              SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Material(
-                    color: Color(0xFFFFD954),
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const HomeScreen()),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 105,
-                        height: 110,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              color: Colors.black,
-                              size: 52,
+                      Material(
+                        color: Color(0xFFFFD954),
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => PharmacyScreen()),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: 105,
+                            height: 110,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  color: Colors.black,
+                                  size: 52,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  '약국',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'NotoSansKR',
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 8),
-                            Text(
-                              '기록',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'NotoSansKR',
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  Material(
-                    color: Color(0xFFFFD954),
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const CameraScreen()),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 105,
-                        height: 110,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.camera_alt_outlined,
-                              color: Colors.black,
-                              size: 52,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              '카메라',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'NotoSansKR',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Material(
-                    color: Color(0xFFFFD954),
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => PharmacyScreen()),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 105,
-                        height: 110,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              color: Colors.black,
-                              size: 52,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              '약국',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'NotoSansKR',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          if (_isSearchVisible)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isSearchVisible = false;
+                    _searchController.clear();
+                  });
+                },
+                child: Container(
+                  color: Colors.black.withOpacity(0.18),
+                ),
+              ),
+            ),
+          if (_isSearchVisible)
+            Positioned(
+              top: 56,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  // 검색창
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 24),
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(12),
+                        bottom: (filteredSuggestions.isNotEmpty || (_searchController.text.isEmpty && recentSearches.isNotEmpty)) ? Radius.zero : Radius.circular(12),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    height: 48,
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, color: Colors.grey[400]),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: '검색어를 입력하세요',
+                              hintStyle: TextStyle(
+                                color: Colors.grey[400],
+                                fontFamily: 'NotoSansKR',
+                                fontSize: 20,
+                              ),
+                              border: InputBorder.none,
+                            ),
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontFamily: 'NotoSansKR',
+                            ),
+                            onSubmitted: (value) {
+                              if (value.trim().isNotEmpty) {
+                                _addToRecentSearches(value.trim());
+                              }
+                            },
+                          ),
+                        ),
+                        if (_searchController.text.isNotEmpty)
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _searchController.clear();
+                              });
+                            },
+                            child: Icon(Icons.close, color: Colors.grey[400], size: 20),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // 추천 검색어 리스트 (입력 시 항상 뜨게)
+                  if (_searchController.text.isNotEmpty)
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 16,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      constraints: BoxConstraints(maxHeight: 300),
+                      child: filteredSuggestions.isEmpty
+                        ? Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(child: Text('추천 검색어가 없습니다.', style: TextStyle(fontFamily: 'NotoSansKR', color: Colors.grey))),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filteredSuggestions.length,
+                            itemBuilder: (context, index) {
+                              final suggestion = filteredSuggestions[index];
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _searchController.text = suggestion;
+                                      _searchController.selection = TextSelection.fromPosition(
+                                        TextPosition(offset: suggestion.length),
+                                      );
+                                      _addToRecentSearches(suggestion);
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Text(
+                                      suggestion,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontFamily: 'NotoSansKR',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                    ),
+                  // 최근 검색어 리스트 (입력 전)
+                  if (_searchController.text.isEmpty && recentSearches.isNotEmpty)
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 16,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      constraints: BoxConstraints(maxHeight: 180),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: recentSearches.length,
+                        itemBuilder: (context, index) {
+                          final recent = recentSearches[index];
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _searchController.text = recent;
+                                  _searchController.selection = TextSelection.fromPosition(
+                                    TextPosition(offset: recent.length),
+                                  );
+                                });
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.history, color: Colors.grey[400], size: 18),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        recent,
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontFamily: 'NotoSansKR',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -815,5 +1026,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         ),
       ],
     );
+  }
+
+  void _addToRecentSearches(String search) {
+    if (!recentSearches.contains(search)) {
+      recentSearches.add(search);
+    }
+    filteredSuggestions = recentSearches.where((s) => s.toLowerCase().contains(search.toLowerCase())).toList();
   }
 }

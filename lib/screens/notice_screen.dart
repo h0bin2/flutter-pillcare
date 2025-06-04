@@ -57,6 +57,11 @@ class NoticeStorage {
   }
 }
 
+Future<void> clearNotices() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('notices');
+}
+
 class NoticeScreen extends StatefulWidget {
   const NoticeScreen({Key? key}) : super(key: key);
 
@@ -70,7 +75,11 @@ class _NoticeScreenState extends State<NoticeScreen> {
   @override
   void initState() {
     super.initState();
-    _noticesFuture = NoticeStorage.loadNotices();
+    clearNotices().then((_) {
+      setState(() {
+        _noticesFuture = NoticeStorage.loadNotices();
+      });
+    });
   }
 
   @override
@@ -128,7 +137,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                   title: Text(
                     notice.title,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'NotoSansKR',
                     ),
@@ -140,8 +149,8 @@ class _NoticeScreenState extends State<NoticeScreen> {
                       Text(
                         notice.subtitle,
                         style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
+                          fontSize: 22,
+                          color: Colors.black87,
                           fontFamily: 'NotoSansKR',
                         ),
                       ),
@@ -149,8 +158,8 @@ class _NoticeScreenState extends State<NoticeScreen> {
                       Text(
                         '${notice.brand}  ${notice.time}',
                         style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
+                          fontSize: 18,
+                          color: Colors.black87,
                           fontFamily: 'NotoSansKR',
                         ),
                       ),

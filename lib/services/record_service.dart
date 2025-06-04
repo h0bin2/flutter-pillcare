@@ -95,54 +95,32 @@ class RecordService {
   }
 
   static Future<List<Map<String, dynamic>>?> getRecords() async {
-    const String endpoint = '/api/record/read';
-
-    if (kDebugMode) print('Attempting to fetch records using Dio at $endpoint');
-
+    // 실제 서버에서 복용 기록을 받아오는 로직으로 복구
     try {
-      final response = await _dio.get(endpoint);
-
-      if (kDebugMode) {
-        print('Fetch records response status (Dio): ${response.statusCode}');
-      }
-
+      final response = await _dio.get('/api/record/list');
       if (response.statusCode == 200 && response.data != null) {
         if (response.data is List) {
-          List<Map<String, dynamic>> records = List<Map<String, dynamic>>.from(
-              response.data.map((item) {
-                if (item is Map) {
-                  return Map<String, dynamic>.from(item);
-                } else {
-                  print('[RecordService] Unexpected item type in record list: ${item.runtimeType}');
-                  return <String, dynamic>{};
-                }
-              })
-          );
-           if (kDebugMode) {
-             print('[RecordService] Fetched ${records.length} records.');
-           }
-          return records;
+          return (response.data as List)
+              .map((item) => item as Map<String, dynamic>)
+              .toList();
+        } else if (response.data is Map && response.data['records'] is List) {
+          // 혹시 records 키로 감싸져 있을 경우
+          return (response.data['records'] as List)
+              .map((item) => item as Map<String, dynamic>)
+              .toList();
         } else {
-           if (kDebugMode) {
-             print('[RecordService] Fetched records data is not a List: ${response.data.runtimeType}');
-           }
-           return null;
+          if (kDebugMode) print('[RecordService] getRecords: 응답 데이터가 List 형태가 아님: \\${response.data}');
+          return null;
         }
       } else {
-        print('[RecordService] Fetch records request returned status ${response.statusCode}');
+        if (kDebugMode) print('[RecordService] getRecords: 서버 오류 - \\${response.statusCode}');
         return null;
       }
-
     } on DioException catch (e) {
-      if (kDebugMode) {
-        print('Error fetching records (DioException): ${e.message}');
-        if (e.response != null) {
-          print('DioException response for fetch records: ${e.response?.data}');
-        }
-      }
+      if (kDebugMode) print('[RecordService] getRecords: DioException - \\${e.message}');
       return null;
     } catch (e) {
-      if (kDebugMode) print('Error fetching records (General Exception): $e');
+      if (kDebugMode) print('[RecordService] getRecords: 예상치 못한 오류 - \\${e}');
       return null;
     }
   }

@@ -4,12 +4,20 @@ class UserInfo {
   final String kakaoId;
   final String? nickname; // 백엔드 스키마에 따라 nullable 여부 확인 필요
   final String? profileImageUrl; // 카카오 프로필 이미지 URL 추가
+  final int? age;
+  final bool? isSmoke;
+  final bool? isDrink;
+  final String? surgery;
 
   UserInfo({
     required this.id,
     required this.kakaoId,
     this.nickname,
     this.profileImageUrl,
+    this.age,
+    this.isSmoke,
+    this.isDrink,
+    this.surgery,
   });
 
   // JSON 데이터를 UserInfo 객체로 변환하는 팩토리 생성자
@@ -21,6 +29,10 @@ class UserInfo {
       nickname: json['nickname'] as String?,
       profileImageUrl: json['profile_image_url'] as String?
         ?? json['kakao_profile_image_url'] as String?, // 둘 중 하나라도 있으면 할당
+      age: json['age'] as int?,
+      isSmoke: json['isSmoke'] as bool?,
+      isDrink: json['isDrink'] as bool?,
+      surgery: json['surgery'] as String?,
     );
   }
 }

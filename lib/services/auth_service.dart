@@ -26,7 +26,7 @@ class AuthService {
 
   // --- Constants ---
   // 실제 운영 환경에서는 환경 변수 등으로 관리하는 것이 좋습니다.
-  static const String _baseUrl = 'http://172.16.29.26:5555';
+  static const String _baseUrl = 'http://1.244.99.89:5000';
   static final _storage = const FlutterSecureStorage();
   static const String _accessTokenKey = 'jwt_access_token';
   static const String _refreshTokenKey = 'jwt_refresh_token';
@@ -386,4 +386,26 @@ class AuthService {
   //     throw Exception('An unexpected error occurred while fetching medicine history: $e');
   //   }
   // }
+
+  // --- Update User Info (age, isDrink, isSmoke, surgery) ---
+  static Future<UserInfo?> updateUserInfo({int? age, bool? isDrink, bool? isSmoke, String? surgery}) async {
+    _setupDioInterceptors();
+    try {
+      final Map<String, dynamic> data = {};
+      if (age != null) data['age'] = age;
+      if (isDrink != null) data['isDrink'] = isDrink;
+      if (isSmoke != null) data['isSmoke'] = isSmoke;
+      if (surgery != null) data['surgery'] = surgery;
+      final response = await _dio.put('/api/auth/users/me', data: data);
+      if (response.statusCode == 200 && response.data != null) {
+        return UserInfo.fromJson(response.data);
+      } else {
+        throw AuthException('Failed to update user info', statusCode: response.statusCode);
+      }
+    } on DioException catch (e) {
+      throw AuthException('Failed to update user info: ${e.message}', statusCode: e.response?.statusCode);
+    } catch (e) {
+      throw AuthException('An unexpected error occurred while updating user info: $e');
+    }
+  }
 }

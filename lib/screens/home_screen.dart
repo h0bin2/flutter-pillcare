@@ -7,8 +7,13 @@ import 'package:flutter/foundation.dart';
 import '../services/record_service.dart';
 import 'package:intl/intl.dart'; // isSameDay 사용 및 날짜 포맷 위해 필요
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/data/latest.dart' as tzdata; // tzdata 임포트는 이제 main.dart로 옮겨가지만, 혹시 모를 상황 대비 주석처리
 import '../constants.dart';
+import '../screens/medicine_info_screen.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // 알림 패키지 추가
+import '../../main.dart'; // flutterLocalNotificationsPlugin 접근을 위함
+import 'dart:convert'; // JSON 인코딩을 위해 추가
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -33,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    tzdata.initializeTimeZones(); // KST 변환을 위해 타임존 데이터 초기화
+    // tzdata.initializeTimeZones(); // KST 변환을 위해 타임존 데이터 초기화 -> main.dart로 옮김
     // 초기 선택일 설정 (선택 사항, 오늘 날짜 기준으로 데이터를 먼저 보여줄 수 있음)
     // _selectedDay = _focusedDay;
     _fetchUserRecords();
@@ -52,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
 
       if (records != null) {
+        print('[HomeScreen] Fetched records before setting state: $records'); // 디버깅을 위해 추가
         setState(() {
           _userRecords = records;
           if (kDebugMode) {
@@ -217,9 +223,20 @@ class _HomeScreenState extends State<HomeScreen> {
           if (pillDetails.isNotEmpty)
             ...pillDetails.map((detail) {
               if (detail is! Map<String, dynamic>) return const SizedBox.shrink();
+              // print('[HomeScreen] Processing detail: $detail'); // 디버깅용 제거
               final String pillName = detail['pill_name'] ?? '이름 모름';
               final int count = detail['pill_count'] ?? 0;
               final String effect = detail['effect'] ?? '효능 정보 없음';
+              // print('[HomeScreen] detail[image_path]: ${detail['image_path']}'); // 디버깅용 제거
+              // print('[HomeScreen] recordData[original_image_path]: ${recordData['original_image_path']}'); // 디버깅용 제거
+              // MedicineInfoScreen에 전달할 데이터를 새로운 맵으로 구성
+              final Map<String, dynamic> medicineInfoArguments = {
+                'pill_name': pillName,
+                'image_path': (detail['image_path'] != null && detail['image_path'].isNotEmpty) ? detail['image_path'] : recordData['original_image_path'] ?? '',
+                'effect': detail['effect'] ?? '',
+                'dosage': detail['dosage'] ?? '',
+                'caution': detail['caution'] ?? '',
+              };
               // 상세/삭제 다이얼로그 함수
               void _showPillActionDialog() {
                 showDialog(
@@ -240,18 +257,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextButton.styleFrom(
                             backgroundColor: const Color(0xFFFFF3D1),
                             foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                           ),
                           onPressed: () {
-                            Navigator.pop(context);
-                            Navigator.pushNamed(
+                            Navigator.of(context).pop(); // 다이얼로그 닫기
+                            Navigator.push(
                               context,
-                              '/medicine_info',
-                              arguments: detail,
+                              MaterialPageRoute(
+                                builder: (context) => MedicineInfoScreen(
+                                  pillData: medicineInfoArguments, // pillData 맵을 직접 전달
+                                ),
+                              ),
                             );
                           },
-                          child: const Text('상세보기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'NotoSansKR')),
+                          child: const Text(
+                            '상세보기',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR'),
+                          ),
                         ),
                         TextButton(
                           style: TextButton.styleFrom(
@@ -279,6 +300,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     });
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('마지막 약이 삭제되어 기록도 함께 삭제되었습니다.'), backgroundColor: Color(0xFFFFD954)),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('기록 삭제에 실패했습니다.'), backgroundColor: Colors.red),
                                     );
                                   }
                                 } else {
@@ -340,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       IconButton(
                         icon: const Icon(Icons.alarm, color: Color(0xFFFFB300), size: 32),
                         onPressed: () {
-                          _showAlarmPicker(context);
+                          _showAlarmPicker(context, medicineInfoArguments); // medicineInfoArguments 전달
                         },
                       ),
                     ],
@@ -380,13 +405,113 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showAlarmPicker(BuildContext context) {
+  // 알림 스케줄링 함수
+  Future<void> _scheduleNotification(DateTime scheduledTime, Map<String, dynamic> pillData, bool isDailyRepeat, List<bool> selectedDays) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'pillcare_notification_channel',
+      'PillCare 알림',
+      channelDescription: '약 복용 시간을 알려줍니다.',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+    const DarwinNotificationDetails iosPlatformChannelSpecifics = DarwinNotificationDetails();
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iosPlatformChannelSpecifics,
+    );
+
+    final String pillName = pillData['pill_name'] ?? '이름 모름';
+    // 현재 시간과 스케줄링할 시간 비교하여 ID 생성 (고유하게)
+    final int notificationId = scheduledTime.millisecondsSinceEpoch ~/ 1000; // 고유한 ID
+    final String title = '약 복용 시간 알림';
+    final String body = '${pillName} 복용 시간입니다!';
+    final String payload = jsonEncode(pillData); // pillData를 JSON 문자열로 인코딩하여 payload에 저장
+
+    // 한국 시간으로 변환
+    final seoul = tz.getLocation('Asia/Seoul');
+    final scheduledKST = tz.TZDateTime.from(scheduledTime, seoul);
+
+    if (isDailyRepeat) {
+      // 매일 반복 알림
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        notificationId,
+        title,
+        body,
+        scheduledKST,
+        platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: payload,
+      );
+    } else {
+      // 선택된 요일에만 알림
+      for (int i = 0; i < 7; i++) {
+        if (selectedDays[i]) {
+          final dayOffset = (i + 1) % 7; // 월요일이 1, 일요일이 7
+          final notificationTime = scheduledKST.add(Duration(days: dayOffset));
+          
+          await flutterLocalNotificationsPlugin.zonedSchedule(
+            notificationId + i, // 각 요일마다 다른 ID 사용
+            title,
+            body,
+            notificationTime,
+            platformChannelSpecifics,
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+            payload: payload,
+          );
+        }
+      }
+    }
+
+    // SharedPreferences에 알림 정보 저장
+    final prefs = await SharedPreferences.getInstance();
+    final alarmsJson = prefs.getString('alarms');
+    List<Map<String, dynamic>> alarms = [];
+    if (alarmsJson != null) {
+      alarms = List<Map<String, dynamic>>.from(json.decode(alarmsJson));
+    }
+    
+    alarms.add({
+      'id': notificationId,
+      'time': scheduledKST.toIso8601String(),
+      'pillName': pillName,
+      'pillData': pillData,
+      'isDailyRepeat': isDailyRepeat,
+      'selectedDays': selectedDays,
+    });
+    
+    await prefs.setString('alarms', json.encode(alarms));
+    
+    if (kDebugMode) {
+      print('[HomeScreen] Notification scheduled for $pillName at $scheduledKST');
+      print('Daily repeat: $isDailyRepeat');
+      if (!isDailyRepeat) {
+        print('Selected days: ${selectedDays.asMap().entries.where((e) => e.value).map((e) => ['월', '화', '수', '목', '금', '토', '일'][e.key]).join(', ')}');
+      }
+    }
+  }
+
+  void _showAlarmPicker(BuildContext context, Map<String, dynamic> pillData) {
     final List<String> ampm = ['오전', '오후'];
     final List<int> hours = List.generate(12, (i) => i + 1);
     final List<int> minutes = List.generate(12, (i) => i * 5);
     int selectedAmpm = 0;
     int selectedHour = 7;
     int selectedMinute = 0;
+    bool isDailyRepeat = true;
+    List<bool> selectedDays = List.generate(7, (index) => false); // 요일 선택 상태
+
+    // 현재 시간을 기준으로 초기값 설정
+    final now = DateTime.now();
+    int initialHour = now.hour;
+    selectedAmpm = initialHour < 12 ? 0 : 1;
+    selectedHour = initialHour % 12;
+    if (selectedHour == 0) selectedHour = 12;
+    selectedMinute = (now.minute ~/ 5) * 5;
 
     showModalBottomSheet(
       context: context,
@@ -398,77 +523,234 @@ class _HomeScreenState extends State<HomeScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.5,
+              height: MediaQuery.of(context).size.height * 0.6,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
                 children: [
-                  // 오전/오후
                   Expanded(
-                    child: CupertinoPicker(
-                      scrollController: FixedExtentScrollController(initialItem: selectedAmpm),
-                      itemExtent: 40,
-                      onSelectedItemChanged: (idx) {
-                        setState(() => selectedAmpm = idx);
-                      },
-                      children: ampm.map((e) => Center(
-                        child: Text(
-                          e,
-                          style: TextStyle(
-                            fontSize: selectedAmpm == ampm.indexOf(e) ? 24 : 20,
-                            fontWeight: selectedAmpm == ampm.indexOf(e) ? FontWeight.bold : FontWeight.normal,
-                            color: selectedAmpm == ampm.indexOf(e) ? Colors.black : Colors.grey,
-                            fontFamily: 'NotoSansKR',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // 오전/오후
+                        Expanded(
+                          child: CupertinoPicker(
+                            scrollController: FixedExtentScrollController(initialItem: selectedAmpm),
+                            itemExtent: 40,
+                            onSelectedItemChanged: (idx) {
+                              setState(() => selectedAmpm = idx);
+                            },
+                            children: ampm.map((e) => Center(
+                              child: Text(
+                                e,
+                                style: TextStyle(
+                                  fontSize: selectedAmpm == ampm.indexOf(e) ? 24 : 20,
+                                  fontWeight: selectedAmpm == ampm.indexOf(e) ? FontWeight.bold : FontWeight.normal,
+                                  color: selectedAmpm == ampm.indexOf(e) ? Colors.black : Colors.grey,
+                                  fontFamily: 'NotoSansKR',
+                                ),
+                              ),
+                            )).toList(),
                           ),
                         ),
-                      )).toList(),
+                        // 시
+                        Expanded(
+                          child: CupertinoPicker(
+                            scrollController: FixedExtentScrollController(initialItem: selectedHour-1),
+                            itemExtent: 40,
+                            onSelectedItemChanged: (idx) {
+                              setState(() => selectedHour = hours[idx]);
+                            },
+                            children: hours.map((h) => Center(
+                              child: Text(
+                                '$h',
+                                style: TextStyle(
+                                  fontSize: selectedHour == h ? 32 : 24,
+                                  fontWeight: selectedHour == h ? FontWeight.bold : FontWeight.normal,
+                                  color: selectedHour == h ? Colors.black : Colors.grey,
+                                  fontFamily: 'NotoSansKR',
+                                ),
+                              ),
+                            )).toList(),
+                          ),
+                        ),
+                        // :
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Text(':', style: TextStyle(fontSize: 32, color: Colors.grey[400], fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR')),
+                        ),
+                        // 분
+                        Expanded(
+                          child: CupertinoPicker(
+                            scrollController: FixedExtentScrollController(initialItem: selectedMinute~/5),
+                            itemExtent: 40,
+                            onSelectedItemChanged: (idx) {
+                              setState(() => selectedMinute = minutes[idx]);
+                            },
+                            children: minutes.map((m) => Center(
+                              child: Text(
+                                m.toString().padLeft(2, '0'),
+                                style: TextStyle(
+                                  fontSize: selectedMinute == m ? 32 : 24,
+                                  fontWeight: selectedMinute == m ? FontWeight.bold : FontWeight.normal,
+                                  color: selectedMinute == m ? Colors.black : Colors.grey,
+                                  fontFamily: 'NotoSansKR',
+                                ),
+                              ),
+                            )).toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  // 시
-                  Expanded(
-                    child: CupertinoPicker(
-                      scrollController: FixedExtentScrollController(initialItem: selectedHour-1),
-                      itemExtent: 40,
-                      onSelectedItemChanged: (idx) {
-                        setState(() => selectedHour = hours[idx]);
-                      },
-                      children: hours.map((h) => Center(
-                        child: Text(
-                          '$h',
-                          style: TextStyle(
-                            fontSize: selectedHour == h ? 32 : 24,
-                            fontWeight: selectedHour == h ? FontWeight.bold : FontWeight.normal,
-                            color: selectedHour == h ? Colors.black : Colors.grey,
-                            fontFamily: 'NotoSansKR',
-                          ),
+                  // 반복 설정 섹션
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        // 매일 반복 옵션
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '매일 반복',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'NotoSansKR',
+                              ),
+                            ),
+                            Switch(
+                              value: isDailyRepeat,
+                              onChanged: (value) {
+                                setState(() {
+                                  isDailyRepeat = value;
+                                  if (value) {
+                                    // 매일 반복 선택 시 모든 요일 선택 해제
+                                    selectedDays = List.generate(7, (index) => false);
+                                  }
+                                });
+                              },
+                              activeColor: Color(0xFFFFD954),
+                            ),
+                          ],
                         ),
-                      )).toList(),
+                        if (!isDailyRepeat) ...[
+                          SizedBox(height: 16),
+                          Text(
+                            '요일 선택',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'NotoSansKR',
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: List.generate(7, (index) {
+                              final days = ['월', '화', '수', '목', '금', '토', '일'];
+                              return Column(
+                                children: [
+                                  Text(
+                                    days[index],
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'NotoSansKR',
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedDays[index] = !selectedDays[index];
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: selectedDays[index] ? Color(0xFFFFD954) : Colors.grey[200],
+                                      ),
+                                      child: selectedDays[index]
+                                          ? Icon(Icons.check, color: Colors.black, size: 20)
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  // :
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: Text(':', style: TextStyle(fontSize: 32, color: Colors.grey[400], fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR')),
-                  ),
-                  // 분
-                  Expanded(
-                    child: CupertinoPicker(
-                      scrollController: FixedExtentScrollController(initialItem: selectedMinute~/5),
-                      itemExtent: 40,
-                      onSelectedItemChanged: (idx) {
-                        setState(() => selectedMinute = minutes[idx]);
-                      },
-                      children: minutes.map((m) => Center(
-                        child: Text(
-                          m.toString().padLeft(2, '0'),
-                          style: TextStyle(
-                            fontSize: selectedMinute == m ? 32 : 24,
-                            fontWeight: selectedMinute == m ? FontWeight.bold : FontWeight.normal,
-                            color: selectedMinute == m ? Colors.black : Colors.grey,
-                            fontFamily: 'NotoSansKR',
+                  SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFFD954),
+                        foregroundColor: Colors.black,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        if (!isDailyRepeat && !selectedDays.contains(true)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('최소 하나의 요일을 선택해주세요.'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        final now = DateTime.now();
+                        int hour = selectedHour;
+                        if (selectedAmpm == 1 && selectedHour != 12) {
+                          hour += 12;
+                        } else if (selectedAmpm == 0 && selectedHour == 12) {
+                          hour = 0;
+                        }
+
+                        DateTime scheduledTime = DateTime(
+                          now.year,
+                          now.month,
+                          now.day,
+                          hour,
+                          selectedMinute,
+                        );
+
+                        if (scheduledTime.isBefore(now)) {
+                          scheduledTime = scheduledTime.add(Duration(days: 1));
+                        }
+
+                        _scheduleNotification(scheduledTime, pillData, isDailyRepeat, selectedDays);
+                        Navigator.pop(context);
+                        
+                        String repeatText = isDailyRepeat 
+                            ? "매일" 
+                            : "매주 " + selectedDays.asMap().entries
+                                .where((e) => e.value)
+                                .map((e) => ['월', '화', '수', '목', '금', '토', '일'][e.key])
+                                .join(', ');
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${pillData['pill_name'] ?? '약'} 알림이 ${DateFormat('a h:mm', 'ko_KR').format(scheduledTime)}에 $repeatText 설정되었습니다.'
+                            ),
+                            backgroundColor: Color(0xFFFFD954)
                           ),
-                        ),
-                      )).toList(),
+                        );
+                      },
+                      child: Text('알림 설정', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR')),
                     ),
                   ),
                 ],
@@ -500,6 +782,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(4.0),
             child: Icon(Icons.arrow_back_ios_new, size: 36, color: Colors.black),
           ),
+
         ),
       ),
       body: Column(

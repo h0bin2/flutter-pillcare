@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // For jsonDecode
 import 'package:flutter_naver_map/flutter_naver_map.dart'; // 네이버 지도 패키지
+import 'package:url_launcher/url_launcher.dart'; // url_launcher 패키지 추가
 import 'subscription_screen.dart';
 import '../services/auth_service.dart';
 import '../models/user_info.dart';
@@ -53,8 +54,9 @@ Future<void> subscribePharmacy(BuildContext context, Map<String, dynamic> pharma
   }
 }
 
-Future<void> addConsultationHistory(BuildContext context, Map<String, dynamic> pharmacy, String history, String status) async {
+Future<void> addConsultationHistory(BuildContext context, Map<String, dynamic> pharmacy, String history, String status, {String? pillName}) async {
   try {
+    print('[addConsultationHistory] pillName: ' + (pillName ?? 'null'));
     final userInfoMap = await AuthService.getCurrentUserInfo();
     if (userInfoMap == null) {
       if (!context.mounted) return;
@@ -68,7 +70,7 @@ Future<void> addConsultationHistory(BuildContext context, Map<String, dynamic> p
     final now = DateTime.now().toIso8601String();
     final body = {
       'user_id': userInfo.id,
-      'pharmacy_id': 0, // 백엔드에서 name+address로 처리, 임시값
+      'pharmacy_id': pharmacy['id'] ?? 0,
       'pharmacy_name': pharmacy['name'] ?? '',
       'pharmacy_address': pharmacy['address'] ?? '',
       'pharmacy_phone': pharmacy['phone'] ?? '',
@@ -76,6 +78,7 @@ Future<void> addConsultationHistory(BuildContext context, Map<String, dynamic> p
       'updated_at': now,
       'status': status,
       'history': history,
+      'pill_name': pillName ?? '',
     };
     final response = await http.post(
       url,
@@ -97,6 +100,18 @@ Future<void> addConsultationHistory(BuildContext context, Map<String, dynamic> p
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('에러 발생: $e'), backgroundColor: Colors.red),
     );
+  }
+}
+
+Future<void> _makePhoneCall(String phoneNumber) async {
+  final Uri launchUri = Uri(
+    scheme: 'tel',
+    path: phoneNumber,
+  );
+  if (await canLaunchUrl(launchUri)) {
+    await launchUrl(launchUri);
+  } else {
+    print('Could not launch $phoneNumber');
   }
 }
 
@@ -152,7 +167,7 @@ class _PharmacyScreenWithCustomDrag extends StatefulWidget {
 }
 
 class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustomDrag> {
-  double sheetTopRatio = 0.45;
+  double sheetTopRatio = 0.6;
   double minRatio = 0.0;
   double maxRatio = 1.0;
   double dragStartDy = 0;
@@ -258,10 +273,12 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
       );
 
       if (response.statusCode == 200) {
+        print('Kakao API Raw Response: ${utf8.decode(response.bodyBytes)}'); // 원시 응답 본문 출력
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         // print("Kakao API Response: $data"); 
         if (data['documents'] != null) {
           final List documents = data['documents'];
+          print('Kakao API Documents: $documents'); // documents 리스트 출력
           List<Map<String, dynamic>> pharmacies = documents.map((doc) {
             String name = doc['place_name'] ?? '이름 정보 없음';
             String address = doc['road_address_name'] ?? doc['address_name'] ?? '주소 정보 없음';
@@ -300,7 +317,8 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
               '_distanceMeters': distanceMeters.toString(), 
               'latitude': pharmacyLatitude, // 약국 위도 추가
               'longitude': pharmacyLongitude, // 약국 경도 추가
-              'id': doc['id'] ?? 'no-id-${DateTime.now().millisecondsSinceEpoch}' // 마커 ID용, 없으면 임시 생성
+              'id': doc['id'] ?? 'no-id-${DateTime.now().millisecondsSinceEpoch}', // 마커 ID용, 없으면 임시 생성
+              'phone': doc['phone'] ?? '', // 전화번호 추가
             };
           }).toList();
 
@@ -327,6 +345,7 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
             _isLoadingData = false; 
             _errorMessage = pharmacies.isEmpty ? '주변에 약국 정보가 없습니다 (반경: ${radius/1000}km)' : null;
           });
+          print('Final Fetched Pharmacies: $_fetchedPharmacies'); // 최종 약국 리스트 출력
           _updateMapElements(); // 약국 정보 로딩 및 상태 업데이트 후 지도 요소 업데이트
         } else {
           setState(() {
@@ -357,26 +376,41 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
     _updateMapElements(); // 맵 준비 완료 후에도 지도 요소 업데이트 시도
   }
 
-  void _updateMapElements() {
-    if (_mapController == null) return; // 맵 컨트롤러가 준비되지 않았으면 아무것도 안 함
+  void _updateMapElements() async {
+    if (_mapController == null) return;
 
-    _mapController!.clearOverlays(type: NOverlayType.marker); // 기존 마커 모두 삭제
+    _mapController!.clearOverlays(type: NOverlayType.marker);
 
     Set<NMarker> markers = {};
 
-    // 1. 현재 위치 마커 추가 (SDK 기본 마커 사용)
-    if (_currentPosition != null) {
-      final currentPosMarker = NMarker(
-        id: 'current_location',
-        position: NLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-        // icon 및 anchor 설정 제거 -> SDK 기본 마커 사용
-      );
-      markers.add(currentPosMarker);
-      // 현재 위치로 카메라 이동 (약국이 많을 경우 줌 레벨 조정 필요할 수 있음)
-      _mapController!.updateCamera(NCameraUpdate.scrollAndZoomTo(
-          target: NLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          zoom: 15
-      ));
+    // 1. 현재 위치 마커 추가 (제거됨)
+    // if (_currentPosition != null) {
+    //   final currentPosMarker = NMarker(
+    //     id: 'current_location',
+    //     position: NLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+    //     icon: await NOverlayImage.fromAssetImage('assets/icons/current_location.png'), // 현재 위치 아이콘
+    //   );
+    //   markers.add(currentPosMarker);
+
+    //   // 현재 위치로 카메라 이동
+    //   _mapController!.updateCamera(NCameraUpdate.scrollAndZoomTo(
+    //       target: NLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+    //       zoom: 15
+    //   ));
+    // }
+
+    // 맵 포커스: 가장 가까운 약국으로 설정
+    if (_fetchedPharmacies.isNotEmpty) {
+      final firstPharmacy = _fetchedPharmacies.first;
+      final lat = firstPharmacy['latitude'] as double?;
+      final lng = firstPharmacy['longitude'] as double?;
+
+      if (lat != null && lng != null) {
+        _mapController!.updateCamera(NCameraUpdate.scrollAndZoomTo(
+            target: NLatLng(lat, lng),
+            zoom: 15 // 약국 상세 보기에 적합한 줌 레벨
+        ));
+      }
     }
 
     // 2. 약국 위치 마커 추가
@@ -390,7 +424,7 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
         final pharmacyMarker = NMarker(
           id: 'pharmacy_$id',
           position: NLatLng(lat, lng), 
-          caption: NOverlayCaption(text: name, minZoom: 12) // icon 설정 없음 (기본 마커 사용)
+          caption: NOverlayCaption(text: name, minZoom: 12)
         );
         markers.add(pharmacyMarker);
       }
@@ -404,7 +438,7 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
     }
   }
 
-  void _showCallDialog(BuildContext context, String pharmacyName, String pharmacyAddress) {
+  void _showCallDialog(BuildContext context, String pharmacyName, String pharmacyAddress, String pharmacyPhone) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -432,7 +466,7 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 21),
                     ),
                     onTap: () async {
-                      await addConsultationHistory(context, {'name': pharmacyName, 'address': pharmacyAddress}, '전화 상담 요청', 'call');
+                      await addConsultationHistory(context, {'name': pharmacyName, 'address': pharmacyAddress, 'phone': pharmacyPhone}, '전화 상담 요청', 'call');
                       Navigator.pop(context);
                     },
                   ),
@@ -448,17 +482,19 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
                     minLeadingWidth: 48,
                     leading: Icon(Icons.phone, size: 28, color: Colors.black87),
                     title: Text(
-                      '02-123-4567',
+                      pharmacyPhone.isNotEmpty ? pharmacyPhone : '전화번호 없음',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                     ),
                     subtitle: Text(
                       '전화걸기',
                       style: TextStyle(fontSize: 18, color: Colors.black87),
                     ),
-                    onTap: () async {
-                      await addConsultationHistory(context, {'name': pharmacyName, 'address': pharmacyAddress}, '전화 바로걸기', 'call_direct');
-                      Navigator.pop(context);
-                    },
+                    onTap: pharmacyPhone.isNotEmpty
+                        ? () async {
+                            _makePhoneCall(pharmacyPhone);
+                            Navigator.pop(context);
+                          }
+                        : null,
                   ),
                 ),
               ],
@@ -501,7 +537,7 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
                 target: _currentPosition != null
                     ? NLatLng(_currentPosition!.latitude, _currentPosition!.longitude)
                     : NLatLng(37.5666102, 126.9783881), // 서울 시청 기본 위치
-                zoom: 15,
+                zoom: 12,
               ),
               locationButtonEnable: true, 
               // 기본 제스처 확대/축소는 활성화 상태로 둡니다.
@@ -660,7 +696,7 @@ class _PharmacyScreenWithCustomDragState extends State<_PharmacyScreenWithCustom
                                           iconSize: 60,
                                           padding: EdgeInsets.zero,
                                           constraints: BoxConstraints(minWidth: 60, minHeight: 60),
-                                          onPressed: () => _showCallDialog(context, p['name']!, p['address']!),
+                                          onPressed: () => _showCallDialog(context, p['name']!, p['address']!, p['phone'] ?? ''),
                                         ),
                                       ),
                                     ],
@@ -686,10 +722,8 @@ class PharmacyDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? latitude = pharmacy['latitude']?.toString();
-    String? longitude = pharmacy['longitude']?.toString();
-    double? lat = latitude != null ? double.tryParse(latitude) : null;
-    double? lng = longitude != null ? double.tryParse(longitude) : null;
+    double? lat = pharmacy['latitude'] as double?;
+    double? lng = pharmacy['longitude'] as double?;
     final double imageHeight = MediaQuery.of(context).size.height * 0.5;
     return Scaffold(
       appBar: AppBar(
@@ -705,180 +739,198 @@ class PharmacyDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Container(
-        color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 상단 이미지 박스
-            SizedBox(
-              height: imageHeight,
-              child: Container(
-                color: Colors.white,
-                child: NaverMap(
-                  options: NaverMapViewOptions(
-                    initialCameraPosition: NCameraPosition(
-                      target: (lat != null && lng != null)
-                          ? NLatLng(lat, lng)
-                          : NLatLng(37.5666102, 126.9783881), // 서울 시청 fallback
-                      zoom: 24,
-                    ),
-                    locationButtonEnable: false,
-                    scrollGesturesEnable: true,
-                    zoomGesturesEnable: true,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 상단 이미지 박스 (고정 높이)
+          SizedBox(
+            height: imageHeight,
+            child: Container(
+              color: Colors.white,
+              child: NaverMap(
+                options: NaverMapViewOptions(
+                  initialCameraPosition: NCameraPosition(
+                    target: (lat != null && lng != null)
+                        ? NLatLng(lat, lng)
+                        : NLatLng(37.5666102, 126.9783881), // 서울 시청 fallback
+                    zoom: 24,
                   ),
-                  onMapReady: (controller) {
-                    if (lat != null && lng != null) {
-                      controller.addOverlay(NMarker(
-                        id: 'pharmacy_marker',
-                        position: NLatLng(lat, lng),
-                      ));
-                    }
-                  },
+                  locationButtonEnable: false,
+                  scrollGesturesEnable: true,
+                  zoomGesturesEnable: true,
                 ),
+                onMapReady: (controller) {
+                  if (lat != null && lng != null) {
+                    controller.addOverlay(NMarker(
+                      id: 'pharmacy_marker',
+                      position: NLatLng(lat, lng),
+                    ));
+                  } else {
+                    print('[ERROR] 약국 좌표가 null입니다. 마커를 추가하지 않습니다.');
+                  }
+                },
               ),
             ),
-            // 약국 정보
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          ),
+          // 약국 정보 및 버튼 섹션 (Expanded로 나머지 공간 차지, SingleChildScrollView로 내부 스크롤)
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        (pharmacy['distance'] ?? '') + ' ',
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.black),
-                      ),
-                      Expanded(
-                        child: Text(
-                          pharmacy['address'] ?? '',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-                          overflow: TextOverflow.ellipsis,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              (pharmacy['distance'] ?? '') + ' ',
+                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.black),
+                            ),
+                            Expanded(
+                              child: Text(
+                                pharmacy['address'] ?? '',
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFFFF3D1),
+                              foregroundColor: Colors.black,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 32.0),
+                              minimumSize: Size.fromHeight(160),
+                            ),
+                            onPressed: () {
+                              final String? phone = pharmacy['phone'] as String?;
+                              if (phone != null && phone.isNotEmpty) {
+                                _makePhoneCall(phone);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('약국 전화번호 정보가 없습니다.')),
+                                );
+                              }
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.phone, size: 80, color: Colors.black),
+                                SizedBox(height: 16),
+                                Text('전화걸기', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.black)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFFFF3D1),
+                              foregroundColor: Colors.black,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 32.0),
+                              minimumSize: Size.fromHeight(160),
+                            ),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    title: Text(
+                                      '정기구독 신청',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.black,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    content: SingleChildScrollView(
+                                      child: Text(
+                                        '${pharmacy['name']}에서 정기구독을 신청하시겠습니까?',
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                                    actionsPadding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                                    actionsAlignment: MainAxisAlignment.center,
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text(
+                                          '취소',
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => SubscriptionFormScreen(pharmacy: pharmacy),
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          '신청서 작성',
+                                          style: const TextStyle(
+                                            color: Color(0xFFFFB300),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.medical_services, size: 80, color: Colors.black),
+                                SizedBox(height: 16),
+                                Text('정기구독', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.black)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            // 버튼 2개
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.22,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFFFF3D1),
-                          foregroundColor: Colors.black,
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 0),
-                        ),
-                        onPressed: () {
-                          // 전화걸기 기능 연결 예정
-                        },
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.phone, size: 54, color: Colors.black),
-                            SizedBox(height: 14),
-                            Text('전화걸기', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.black)),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFFFF3D1),
-                          foregroundColor: Colors.black,
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 0),
-                        ),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                title: Text(
-                                  '정기구독 신청',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.black,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                content: Text(
-                                  '${pharmacy['name']}에서 정기구독을 신청하시겠습니까?',
-                                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-                                  textAlign: TextAlign.center,
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text(
-                                      '취소',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 22,
-                                      ),
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () async {
-                                      Navigator.pop(context); // 다이얼로그 닫기
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => SubscriptionFormScreen(pharmacy: pharmacy),
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      '신청서 작성',
-                                      style: TextStyle(
-                                        color: Color(0xFFFFB300),
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.medical_services, size: 54, color: Colors.black),
-                            SizedBox(height: 14),
-                            Text('정기구독', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.black)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

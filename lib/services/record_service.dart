@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http_parser/http_parser.dart';
 import 'auth_service.dart'; // AuthService의 static 멤버(baseUrl, dio 인스턴스) 접근을 위함
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RecordService {
   static final Dio _dio = AuthService.getDioInstance();
@@ -97,7 +98,8 @@ class RecordService {
   static Future<List<Map<String, dynamic>>?> getRecords() async {
     // 실제 서버에서 복용 기록을 받아오는 로직으로 복구
     try {
-      final response = await _dio.get('/api/record/list');
+      final response = await _dio.get('/api/record/read');
+      if (kDebugMode) print('[RecordService] Raw API response data: ' + response.data.toString());
       if (response.statusCode == 200 && response.data != null) {
         if (response.data is List) {
           return (response.data as List)
@@ -154,5 +156,62 @@ class RecordService {
       if (kDebugMode) print('Error deleting pill (General Exception): \\${e}');
       return false;
     }
+  }
+
+  static Future<List<Map<String, dynamic>>?> getRecommendations({bool forceNetwork = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now();
+    final todayKey = 'recommendations_date';
+    final dataKey = 'recommendations_data';
+    final cachedDate = prefs.getString(todayKey);
+    final cachedData = prefs.getString(dataKey);
+    final todayStr = '${today.year}-${today.month}-${today.day}';
+    if (!forceNetwork && cachedDate == todayStr && cachedData != null) {
+      print('[RecordService] getRecommendations: 캐시 사용 (date: \\${cachedDate ?? 'null'})');
+      print('[RecordService] getRecommendations: 캐시 데이터 내용: $cachedData');
+      try {
+        final decoded = jsonDecode(cachedData);
+        if (decoded is List) {
+          return decoded.map((e) => e as Map<String, dynamic>).toList();
+        }
+      } catch (e) {
+        if (kDebugMode) print('[RecordService] getRecommendations: 캐시 파싱 오류 - $e');
+      }
+    }
+    print('[RecordService] getRecommendations: 네트워크 호출');
+    try {
+      final response = await _dio.get('/api/recommend/medicine');
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data is Map && response.data['recommendations'] is List) {
+          final recs = (response.data['recommendations'] as List)
+              .map((item) => item as Map<String, dynamic>)
+              .toList();
+          // 캐시에 저장
+          prefs.setString(todayKey, todayStr);
+          prefs.setString(dataKey, jsonEncode(recs));
+          return recs;
+        } else {
+          if (kDebugMode) print('[RecordService] getRecommendations: 응답 데이터에 recommendations 리스트가 없음: \\${response.data}');
+          return null;
+        }
+      } else {
+        if (kDebugMode) print('[RecordService] getRecommendations: 서버 오류 - \\${response.statusCode}');
+        return null;
+      }
+    } on DioException catch (e) {
+      if (kDebugMode) print('[RecordService] getRecommendations: DioException - \\${e.message}');
+      return null;
+    } catch (e) {
+      if (kDebugMode) print('[RecordService] getRecommendations: 예상치 못한 오류 - \\${e}');
+      return null;
+    }
+  }
+
+  /// 개발용: 추천 캐시 강제 초기화 함수
+  static Future<void> clearRecommendationsCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('recommendations_date');
+    await prefs.remove('recommendations_data');
+    if (kDebugMode) print('[RecordService] 추천 캐시 초기화 완료');
   }
 } 

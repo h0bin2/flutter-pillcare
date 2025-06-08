@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
+// import 'package:http/http.dart' as http; // http 패키지 제거
+// import 'dart:convert'; // jsonDecode 제거
+import '../constants.dart'; // ApiConstants 사용을 위해 추가
 
 class MedicineInfoScreen extends StatefulWidget {
-  final String name;
-  final String imagePath;
-  final List<String> effects;
-  final List<String> usage;
-  final List<String> cautions;
+  final Map<String, dynamic> pillData; // pillData 맵을 인자로 받도록 재변경
 
   const MedicineInfoScreen({
-    required this.name,
-    required this.imagePath,
-    required this.effects,
-    required this.usage,
-    required this.cautions,
+    required this.pillData,
     Key? key,
   }) : super(key: key);
 
@@ -22,22 +17,73 @@ class MedicineInfoScreen extends StatefulWidget {
 
 class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
   int _selectedTab = 0;
+  // Map<String, dynamic>? _fetchedPillData; // API로부터 가져온 약 상세 정보 제거
+  // bool _isLoading = true; // 로딩 상태 제거
+  // String? _errorMessage; // 에러 메시지 제거
+
+  @override
+  void initState() {
+    super.initState();
+    // _fetchPillDetails(); // API 호출 제거
+  }
+
+  // Future<void> _fetchPillDetails() async { ... } // API 호출 함수 전체 제거
+
+  // pillData 맵에서 데이터를 추출하는 getter 정의 (이제 fetchedPillData 고려 안 함)
+  String get _name => widget.pillData['pill_name'] ?? '정보 없음';
+  String get _imagePath {
+    final path = widget.pillData['image_path'] as String?;
+    String finalPath;
+    if (path == null || path.isEmpty) {
+      finalPath = 'assets/images/placeholder.png';
+    } else if (path.startsWith('http')) {
+      finalPath = path;
+    } else {
+      String cleanedPath = path!;
+      if (cleanedPath.startsWith('flutter-back/')) {
+        cleanedPath = cleanedPath.substring('flutter-back/'.length); // 'flutter-back/' 제거
+      }
+      if (cleanedPath.startsWith('/')) {
+        finalPath = '${ApiConstants.baseUrl}$cleanedPath';
+      } else {
+        finalPath = '${ApiConstants.baseUrl}/$cleanedPath';
+      }
+    }
+    print('[MedicineInfoScreen] Final imagePath: $finalPath');
+    return finalPath;
+  }
+
+  // list 형태의 데이터 파싱
+  List<String> _parseList(dynamic data) {
+    if (data is List) {
+      return data.map((e) => e.toString()).toList();
+    }
+    if (data is String && data.isNotEmpty) {
+      return [data];
+    }
+    return ['정보 없음'];
+  }
+
+  List<String> get _effects => _parseList(widget.pillData['effect']);
+  List<String> get _usage => _parseList(widget.pillData['dosage']);
+  List<String> get _cautions => _parseList(widget.pillData['caution']);
 
   final List<String> tabTitles = ['효과효능', '용법용량', '주의사항'];
   final List<IconData> tabIcons = [
-    Icons.medication, // 알약 아이콘
-    Icons.science,    // 비커 아이콘
+    Icons.medication,
+    Icons.science,
     Icons.warning_amber_rounded,
   ];
 
   List<List<String>> get tabContents => [
-    widget.effects,
-    widget.usage,
-    widget.cautions,
+    _effects,
+    _usage,
+    _cautions,
   ];
 
   @override
   Widget build(BuildContext context) {
+    // 로딩 및 에러 상태 UI 제거
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -48,7 +94,7 @@ class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
         ),
         centerTitle: true,
         title: Text(
-          widget.name,
+          _name, // widget.pillData에서 가져온 이름
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.w900,
@@ -73,13 +119,21 @@ class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
-                child: Image.asset(
-                  widget.imagePath,
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Icon(Icons.medication, color: Colors.white, size: 60),
-                ),
+                child: _imagePath.startsWith('assets/')
+                    ? Image.asset( // 로컬 에셋인 경우
+                        _imagePath,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.medication, color: Colors.white, size: 60),
+                      )
+                    : Image.network( // 네트워크 이미지인 경우
+                        _imagePath,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: CircularProgressIndicator());
+                        },
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.medication, color: Colors.white, size: 60),
+                      ),
               ),
             ),
             // 탭 버튼
@@ -133,14 +187,27 @@ class _MedicineInfoScreenState extends State<MedicineInfoScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Color(0xFFFFD954), width: 2),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: tabContents[_selectedTab]
-                    .map((e) => Padding(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.30,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: tabContents[_selectedTab].isEmpty
+                      ? [Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2.0),
-                          child: Text('• $e', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR')),
-                        ))
-                    .toList(),
+                          child: Text(
+                            '해당 정보가 없습니다.',
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR'),
+                          ),
+                        )]
+                      : tabContents[_selectedTab]
+                          .map((e) => Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                child: Text('• $e', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR')),
+                              ))
+                          .toList(),
+                ),
               ),
             ),
           ],

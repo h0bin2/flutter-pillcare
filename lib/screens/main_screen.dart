@@ -10,11 +10,13 @@ import 'pharmacy_screen.dart';
 import 'settings_screen.dart';
 import 'consultation_history_page.dart';
 import 'notice_screen.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 import '../services/auth_service.dart';
 import '../models/user_info.dart';
 import '../models/consultation_info.dart';
 import '../services/record_service.dart';
+import '../services/search_service.dart';
 import '../../main.dart';
 
 class MainScreen extends StatefulWidget {
@@ -34,6 +36,13 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   TextEditingController _searchController = TextEditingController();
   List<String> recentSearches = [];
   List<String> filteredSuggestions = [];
+  Future<List<Map<String, dynamic>>?>? _recommendFuture;
+  Timer? _autocompleteDebounce;
+  bool _shouldLoadRecommend = false;
+  List<Map<String, dynamic>> _searchResults = [];
+  List<Map<String, dynamic>> _autocompleteResults = [];
+  bool _isSearching = false;
+  Timer? _debounce;
 
   Future<void> _makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -66,17 +75,23 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         if (userInfo.id != null) {
           setState(() {
             _consultationHistoryFuture = AuthService.getConsultationHistory(userInfo.id!);
+            _recommendFuture = null;
+            _shouldLoadRecommend = false;
           });
         } else {
           printError("initState: UserInfo에 id 필드가 없습니다. 상담 내역을 로드할 수 없습니다.");
           setState(() {
             _consultationHistoryFuture = Future.value([]);
+            _recommendFuture = null;
+            _shouldLoadRecommend = false;
           });
         }
       } else if (mounted) {
         printError("initState: 사용자 정보를 가져오지 못했습니다.");
         setState(() {
           _consultationHistoryFuture = Future.value([]);
+          _recommendFuture = null;
+          _shouldLoadRecommend = false;
         });
       }
     }).catchError((error) {
@@ -84,6 +99,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         printError("initState: 사용자 정보 로드 중 오류: $error");
         setState(() {
           _consultationHistoryFuture = Future.error(error);
+          _recommendFuture = null;
+          _shouldLoadRecommend = false;
         });
       }
     });
@@ -118,6 +135,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   void dispose() {
     routeObserver.unsubscribe(this);
     _timer?.cancel();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -129,6 +147,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         if (userInfo.id != null) {
           setState(() {
             _consultationHistoryFuture = AuthService.getConsultationHistory(userInfo.id!);
+            _recommendFuture = RecordService.getRecommendations(); // 캐시 우선 사용
           });
         }
       }
@@ -353,13 +372,22 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                                             ],
                                           ),
                                           SizedBox(height: constraints.maxHeight * 0.03),
-                                          Text(
-                                            '약 드셨나요?',
-                                            style: TextStyle(
-                                              fontSize: constraints.maxHeight * 0.2,
-                                              color: Colors.black,
-                                              fontFamily: 'NotoSansKR',
-                                            ),
+                                          FutureBuilder<List<Map<String, dynamic>>?>(
+                                            future: RecordService.getRecords(),
+                                            builder: (context, snapshot) {
+                                              String message = '약 드셨나요?';
+                                              if (snapshot.hasData && snapshot.data != null && _hasTodayRecord(snapshot.data!)) {
+                                                message = '약 복용을 했어요';
+                                              }
+                                              return Text(
+                                                message,
+                                                style: TextStyle(
+                                                  fontSize: constraints.maxHeight * 0.2,
+                                                  color: Colors.black,
+                                                  fontFamily: 'NotoSansKR',
+                                                ),
+                                              );
+                                            },
                                           ),
                                         ],
                                       );
@@ -402,150 +430,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                     ),
                   ),
                   SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '추천',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black,
-                          fontFamily: 'NotoSansKR',
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  FutureBuilder<List<Map<String, dynamic>>?>(
-                    future: RecordService.getRecords(),
-                    builder: (context, recordSnapshot) {
-                      if (recordSnapshot.connectionState == ConnectionState.waiting) {
-                        return Container(
-                          width: double.infinity,
-                          height: 80,
-                          alignment: Alignment.center,
-                          child: CircularProgressIndicator(),
-                        );
-                      } else if (recordSnapshot.hasError) {
-                        return Container(
-                          width: double.infinity,
-                          height: 80,
-                          alignment: Alignment.center,
-                          child: Text('복용 기록을 불러오는 중 오류가 발생했습니다.', style: TextStyle(color: Colors.red, fontFamily: 'NotoSansKR')),
-                        );
-                      } else if (!recordSnapshot.hasData || recordSnapshot.data == null || recordSnapshot.data!.isEmpty) {
-                        return Container(
-                          width: double.infinity,
-                          height: 140,
-                          padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFFFF3D1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '복용 기록을 진행하면 맞춤형 영양제를 추천드립니다.',
-                              style: TextStyle(fontSize: 24, color: Colors.grey.shade700, fontFamily: 'NotoSansKR'),
-                            ),
-                          ),
-                        );
-                      } else {
-                        return InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => MedicineInfoScreen(
-                                  name: '오메가-3',
-                                  imagePath: 'assets/omega3.png',
-                                  effects: [
-                                    '신체 염증을 줄이고 혈액 건강에 도움이 됩니다.',
-                                    '혈중 중성지방 감소',
-                                    '심혈관 건강 개선',
-                                    '눈 건강 유지',
-                                  ],
-                                  usage: [
-                                    '성인: 1일 1~2회, 1회 1캡슐 식후 복용',
-                                    '어린이: 의사와 상담 후 복용',
-                                  ],
-                                  cautions: [
-                                    '과다 복용 시 출혈 위험 증가',
-                                    '임산부, 수유부는 복용 전 의사와 상담',
-                                    '혈액 응고 억제제와 병용 시 주의',
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFFFD954),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 65,
-                                      height: 65,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Icon(
-                                        Icons.medication,
-                                        color: Colors.black54,
-                                        size: 40,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      '오메가-3',
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.black,
-                                        fontFamily: 'NotoSansKR',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(width: 20),
-                                Flexible(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(right: 12),
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        '신체 염증을 줄이고 혈액 건강에 도움이 됩니다.',
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,
-                                          height: 1.4,
-                                          fontFamily: 'NotoSansKR',
-                                        ),
-                                        textAlign: TextAlign.left,
-                                        softWrap: true,
-                                        overflow: TextOverflow.visible,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
+                  RecommendSection(future: _recommendFuture),
                   SizedBox(height: 8),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -585,9 +470,17 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                         printError("Error loading consultation history: \\${snapshot.error}");
                         return Center(child: Text('상담 내역을 불러오는 중 오류가 발생했습니다.', style: TextStyle(color: Colors.red, fontFamily: 'NotoSansKR')));
                       } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                        consultations = snapshot.data!.length > 2
-                            ? snapshot.data!.sublist(0, 2)
-                            : snapshot.data!;
+                        consultations = snapshot.data!.isNotEmpty
+                            ? snapshot.data!.sublist(0, 1)
+                            : [];
+                        if (!_shouldLoadRecommend) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted) setState(() {
+                                  _recommendFuture = RecordService.getRecommendations();
+                                  _shouldLoadRecommend = true;
+                                });
+                              });
+                            }
                       }
                       if (consultations.isEmpty) {
                         return Container(
@@ -618,49 +511,121 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                           itemBuilder: (context, index) {
                             final consultation = consultations[index];
                             return Container(
+                              constraints: BoxConstraints(minHeight: 210, maxHeight: 210),
                               padding: EdgeInsets.only(
-                                top: 20,
-                                bottom: index == consultations.length - 1 ? 20 : 20,
-                                left: 20,
-                                right: 20,
+                                top: 14,
+                                bottom: index == consultations.length - 1 ? 14 : 10,
+                                left: 14,
+                                right: 14,
                               ),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-                                  Expanded(
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          consultation.pharmacyName,
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w900,
+                                            fontFamily: 'NotoSansKR',
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        consultation.formattedCreatedAt,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey.shade700,
+                                          fontFamily: 'NotoSansKR',
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 6),
+                                  if (consultation.pillName != null && consultation.pillName!.isNotEmpty)
+                                    Container(
+                                      width: double.infinity,
+                                      margin: EdgeInsets.only(bottom: 6),
+                                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFFFFF3D1),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.medication, color: Color(0xFFFFB300), size: 18),
+                                          SizedBox(width: 6),
+                                          Text(
+                                            '약 이름',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFFFFB300),
+                                              fontFamily: 'NotoSansKR',
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            consultation.pillName!,
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black,
+                                              fontFamily: 'NotoSansKR',
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  Container(
+                                    width: double.infinity,
+                                    constraints: BoxConstraints(minHeight: 90, maxHeight: 90),
+                                    margin: EdgeInsets.only(top: 0),
+                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFFF5F5F5),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
+                                            Icon(Icons.description, color: Colors.grey, size: 18),
+                                            SizedBox(width: 6),
                                             Text(
-                                              consultation.pharmacyName,
+                                              '증상',
                                               style: TextStyle(
-                                                fontSize: 26,
-                                                fontWeight: FontWeight.w900,
-                                                fontFamily: 'NotoSansKR',
-                                              ),
-                                            ),
-                                            SizedBox(width: 10),
-                                            Text(
-                                              consultation.formattedCreatedAt,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.grey.shade700,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.grey,
                                                 fontFamily: 'NotoSansKR',
                                               ),
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 6),
+                                        SizedBox(height: 4),
                                         Text(
                                           consultation.history,
                                           style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
                                             color: Colors.black,
                                             fontFamily: 'NotoSansKR',
                                           ),
-                                          maxLines: 2,
+                                          maxLines: 3,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
@@ -825,171 +790,66 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                 children: [
                   // 검색창
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 24),
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(12),
-                        bottom: (filteredSuggestions.isNotEmpty || (_searchController.text.isEmpty && recentSearches.isNotEmpty)) ? Radius.zero : Radius.circular(12),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 16,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    height: 48,
-                    child: Row(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
                       children: [
-                        Icon(Icons.search, color: Colors.grey[400]),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              hintText: '검색어를 입력하세요',
-                              hintStyle: TextStyle(
-                                color: Colors.grey[400],
-                                fontFamily: 'NotoSansKR',
-                                fontSize: 20,
-                              ),
-                              border: InputBorder.none,
+                        TextField(
+                          controller: _searchController,
+                          onChanged: _handleSearch,
+                          decoration: InputDecoration(
+                            hintText: '약 이름을 검색하세요',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontFamily: 'NotoSansKR',
-                            ),
-                            onSubmitted: (value) {
-                              if (value.trim().isNotEmpty) {
-                                _addToRecentSearches(value.trim());
-                              }
-                            },
+                            filled: true,
+                            fillColor: Colors.white,
                           ),
                         ),
-                        if (_searchController.text.isNotEmpty)
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _searchController.clear();
-                              });
-                            },
-                            child: Icon(Icons.close, color: Colors.grey[400], size: 20),
+                        if (_isSearching)
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        if (_autocompleteResults.isNotEmpty)
+                          Container(
+                            margin: EdgeInsets.only(top: 8),
+                            constraints: BoxConstraints(maxHeight: 300),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: _autocompleteResults.length,
+                              itemBuilder: (context, index) {
+                                final pill = _autocompleteResults[index];
+                                return ListTile(
+                                  leading: pill['image_path'] != null
+                                      ? Image.network(
+                                          _getImageUrl(pill['image_path']),
+                                          width: 40,
+                                          height: 40,
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              Icon(Icons.medication, size: 40),
+                                        )
+                                      : Icon(Icons.medication, size: 40),
+                                  title: Text(pill['drug_name'] ?? '이름 없음'),
+                                  onTap: () => _onAutocompleteItemTap(pill),
+                                );
+                              },
+                            ),
                           ),
                       ],
                     ),
                   ),
-                  // 추천 검색어 리스트 (입력 시 항상 뜨게)
-                  if (_searchController.text.isNotEmpty)
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 16,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      constraints: BoxConstraints(maxHeight: 300),
-                      child: filteredSuggestions.isEmpty
-                        ? Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: Text('추천 검색어가 없습니다.', style: TextStyle(fontFamily: 'NotoSansKR', color: Colors.grey))),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: filteredSuggestions.length,
-                            itemBuilder: (context, index) {
-                              final suggestion = filteredSuggestions[index];
-                              return Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _searchController.text = suggestion;
-                                      _searchController.selection = TextSelection.fromPosition(
-                                        TextPosition(offset: suggestion.length),
-                                      );
-                                      _addToRecentSearches(suggestion);
-                                    });
-                                  },
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    child: Text(
-                                      suggestion,
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontFamily: 'NotoSansKR',
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                    ),
-                  // 최근 검색어 리스트 (입력 전)
-                  if (_searchController.text.isEmpty && recentSearches.isNotEmpty)
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 16,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      constraints: BoxConstraints(maxHeight: 180),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: recentSearches.length,
-                        itemBuilder: (context, index) {
-                          final recent = recentSearches[index];
-                          return Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _searchController.text = recent;
-                                  _searchController.selection = TextSelection.fromPosition(
-                                    TextPosition(offset: recent.length),
-                                  );
-                                });
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.history, color: Colors.grey[400], size: 18),
-                                    SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        recent,
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontFamily: 'NotoSansKR',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -1033,5 +893,288 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       recentSearches.add(search);
     }
     filteredSuggestions = recentSearches.where((s) => s.toLowerCase().contains(search.toLowerCase())).toList();
+  }
+
+  // 오늘 날짜에 기록이 있는지 검사하는 함수
+  bool _hasTodayRecord(List<Map<String, dynamic>> records) {
+    final now = DateTime.now();
+    return records.any((record) {
+      if (record['created_at'] != null && record['created_at'] is String) {
+        final recordDate = DateTime.parse(record['created_at']).toLocal();
+        return recordDate.year == now.year &&
+            recordDate.month == now.month &&
+            recordDate.day == now.day;
+      }
+      return false;
+    });
+  }
+
+  Future<void> _searchPills(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      final results = await SearchService.search(query);
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isSearching = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('검색 중 오류가 발생했습니다.')),
+      );
+    }
+  }
+
+  Future<void> _getAutocomplete(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _autocompleteResults = [];
+      });
+      return;
+    }
+
+    try {
+      final results = await SearchService.autocomplete(query);
+      if (mounted) {
+        setState(() {
+          _autocompleteResults = results;
+        });
+      }
+    } catch (e) {
+      print('자동완성 오류: $e');
+      if (mounted) {
+        setState(() {
+          _autocompleteResults = [];
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('자동완성 서비스에 연결할 수 없습니다.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleSearch(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    if (query.isEmpty) {
+      setState(() {
+        _autocompleteResults = [];
+      });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _getAutocomplete(query);
+    });
+  }
+
+  void _onAutocompleteItemTap(Map<String, dynamic> pill) {
+    setState(() {
+      _isSearchVisible = false;
+      _searchController.clear();
+    });
+    _searchPills(pill['drug_name']).then((_) {
+      if (_searchResults.isNotEmpty) {
+        _navigateToMedicineInfo(_searchResults[0]);
+      }
+    });
+  }
+
+  String _getImageUrl(String? imagePath) {
+    if (imagePath == null) return 'assets/omega3.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    String cleanPath = imagePath.replaceAll('flutter-back/', '');
+    return 'http://1.244.99.89:5000/$cleanPath';
+  }
+
+  void _navigateToMedicineInfo(Map<String, dynamic> pillData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MedicineInfoScreen(
+          pillData: {
+            'pill_name': pillData['drug_name'] ?? '알 수 없는 약',
+            'image_path': _getImageUrl(pillData['image_path']),
+            'effect': pillData['effect'] != null ? [pillData['effect'].toString()] : [],
+            'dosage': pillData['dosage'] != null ? [pillData['dosage'].toString()] : [],
+            'caution': pillData['caution'] != null ? [pillData['caution'].toString()] : [],
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// RecommendSection을 StatefulWidget으로 변경
+class RecommendSection extends StatefulWidget {
+  final Future<List<Map<String, dynamic>>?>? future;
+  const RecommendSection({Key? key, required this.future}) : super(key: key);
+  @override
+  State<RecommendSection> createState() => _RecommendSectionState();
+}
+
+class _RecommendSectionState extends State<RecommendSection> {
+  Future<List<Map<String, dynamic>>?>? _future;
+  bool _forceNetworkTried = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.future;
+    if (_future == null) {
+      // 상담내역이 없어서 future가 null이면 강제로 추천 API 요청
+      // (이제는 main_screen.dart에서 타이밍 제어하므로 여기선 필요 없음)
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant RecommendSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.future != oldWidget.future) {
+      setState(() {
+        _future = widget.future;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 4),
+          child: Text('추천', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black, fontFamily: 'NotoSansKR')),
+        ),
+        Container(
+          width: double.infinity,
+          height: 140,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: Color(0xFFFFD954),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: _future == null
+              ? Center(child: CircularProgressIndicator())
+              : FutureBuilder<List<Map<String, dynamic>>?>(
+                  future: _future,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('추천을 불러오는 중 오류', style: TextStyle(fontFamily: 'NotoSansKR', color: Colors.red)));
+                    } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
+                      if (!_forceNetworkTried) {
+                        _forceNetworkTried = true;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          setState(() {
+                            _future = RecordService.getRecommendations(forceNetwork: true);
+                          });
+                        });
+                      }
+                      return Center(child: Text('추천 데이터가 없습니다.', style: TextStyle(fontFamily: 'NotoSansKR', color: Colors.grey)));
+                    } else {
+                      final rec = snapshot.data![0];
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          print('[MainScreen] Recommendation data: $rec');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MedicineInfoScreen(
+                                pillData: {
+                                  'pill_name': rec['name'] ?? '추천 영양제',
+                                  'image_path': rec['image_path'] ?? 'assets/omega3.png',
+                                  'effect': (rec['effects'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+                                  'dosage': (rec['usage'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+                                  'caution': (rec['cautions'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 55,
+                                  height: 55,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.medication,
+                                    color: Colors.black54,
+                                    size: 30,
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  rec['name'] ?? '추천 영양제',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black,
+                                    fontFamily: 'NotoSansKR',
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ),
+                            SizedBox(width: 20),
+                            Flexible(
+                              child: Padding(
+                                padding: EdgeInsets.only(right: 6),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: AutoSizeText(
+                                    (rec['reason'] != null && rec['reason'].toString().isNotEmpty)
+                                      ? rec['reason'].toString()
+                                      : '추천 영양제의 효과를 확인해보세요.',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black,
+                                      height: 1.4,
+                                      fontFamily: 'NotoSansKR',
+                                    ),
+                                    textAlign: TextAlign.left,
+                                    maxLines: 10,
+                                    minFontSize: 6,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                ),
+        ),
+      ],
+    );
   }
 }

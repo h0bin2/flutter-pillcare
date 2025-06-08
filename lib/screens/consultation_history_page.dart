@@ -55,115 +55,132 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
             itemBuilder: (context, index) {
               final consultation = consultations[index];
               return InkWell(
+                onTap: () {
+                  // TODO: 상세 페이지 이동 또는 다른 동작 정의
+                },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
+                  constraints: BoxConstraints(minHeight: 210, maxHeight: 210),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(color: Colors.grey.shade400),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   margin: EdgeInsets.only(bottom: 16),
-                  padding: EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                  padding: EdgeInsets.only(top: 14, bottom: 14, left: 14, right: 14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Text(
-                            consultation.pharmacyName,
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: 'NotoSansKR',
+                          Flexible(
+                            child: Text(
+                              consultation.pharmacyName,
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'NotoSansKR',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           SizedBox(width: 10),
                           Text(
-                            DateFormat('yyyy.MM.dd (E)', 'ko').format(consultation.createdAt),
+                            consultation.formattedCreatedAt,
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.grey.shade700,
                               fontFamily: 'NotoSansKR',
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
-                      Builder(
-                        builder: (context) {
-                          if (consultation.status == 'subscribe') {
-                            return ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PharmacyDetailScreen(
-                                      pharmacy: {
-                                        'name': consultation.pharmacyName,
-                                        'address': '',
-                                        'distance': '',
-                                        'latitude': null,
-                                        'longitude': null,
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFFFFF3D1),
-                                foregroundColor: Colors.black,
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR'),
+                      SizedBox(height: 6),
+                      Container(
+                        width: double.infinity,
+                        margin: EdgeInsets.only(bottom: 6),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFFF3D1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.medication, color: Color(0xFFFFB300), size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              '약 이름',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFFFB300),
+                                fontFamily: 'NotoSansKR',
                               ),
-                              child: Text('정기구독 신청'),
-                            );
-                          } else if (consultation.status == 'call' || consultation.status == 'call_direct') {
-                            return ElevatedButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: Text('전화 상담요청'),
-                                    content: Text('${consultation.pharmacyName}에 전화 상담을 요청하시겠습니까?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: Text('취소'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          // TODO: 전화 상담요청 처리
-                                          Navigator.pop(context);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('전화 상담이 요청되었습니다.')),
-                                          );
-                                        },
-                                        child: Text('요청'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFFE0E0E0),
-                                foregroundColor: Colors.black,
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'NotoSansKR'),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              consultation.pillName != null && consultation.pillName!.isNotEmpty
+                                  ? consultation.pillName!
+                                  : '약 이름을 입력하지 않았습니다',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                fontFamily: 'NotoSansKR',
                               ),
-                              child: Text('전화 상담요청'),
-                            );
-                          } else {
-                            return SizedBox.shrink();
-                          }
-                        },
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: double.infinity,
+                        constraints: BoxConstraints(minHeight: 90, maxHeight: 90),
+                        margin: EdgeInsets.only(top: 0),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF5F5F5),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.description, color: Colors.grey, size: 18),
+                                SizedBox(width: 6),
+                                Text(
+                                  '증상',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey,
+                                    fontFamily: 'NotoSansKR',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              consultation.history,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black,
+                                fontFamily: 'NotoSansKR',
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

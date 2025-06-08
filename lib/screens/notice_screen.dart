@@ -24,13 +24,29 @@ class NoticeItem {
     'icon': icon.codePoint,
   };
 
-  factory NoticeItem.fromJson(Map<String, dynamic> json) => NoticeItem(
-    brand: json['brand'],
-    time: json['time'],
-    title: json['title'],
-    subtitle: json['subtitle'],
-    icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
-  );
+  factory NoticeItem.fromJson(Map<String, dynamic> json) {
+    IconData icon;
+    switch (json['icon']) {
+      case 0xe0b0: // phone
+        icon = Icons.phone;
+        break;
+      case 0xe0e1: // medical_services
+        icon = Icons.medical_services;
+        break;
+      case 0xe0c8: // notifications
+        icon = Icons.notifications;
+        break;
+      default:
+        icon = Icons.notifications;
+    }
+    return NoticeItem(
+      brand: json['brand'],
+      time: json['time'],
+      title: json['title'],
+      subtitle: json['subtitle'],
+      icon: icon,
+    );
+  }
 }
 
 class NoticeStorage {
@@ -75,11 +91,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
   @override
   void initState() {
     super.initState();
-    clearNotices().then((_) {
-      setState(() {
-        _noticesFuture = NoticeStorage.loadNotices();
-      });
-    });
+    _noticesFuture = NoticeStorage.loadNotices();
   }
 
   @override

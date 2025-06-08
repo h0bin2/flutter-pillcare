@@ -7,11 +7,95 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'app_settings_provider.dart';
 import 'package:flutter/widgets.dart';
+import 'screens/medicine_info_screen.dart';
+import 'screens/home_screen.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
+// 알림 응답 핸들러 (알림 탭 시)
+void onDidReceiveNotificationResponse(NotificationResponse notificationResponse) async {
+  final String? payload = notificationResponse.payload;
+  if (payload != null && payload.isNotEmpty) {
+    debugPrint('notification payload: $payload');
+    try {
+      final Map<String, dynamic> pillData = jsonDecode(payload);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushNamed(
+          navigatorKey.currentContext!,
+          '/medicine_info',
+          arguments: pillData,
+        );
+      });
+    } catch (e) {
+      debugPrint('Failed to parse notification payload: $e');
+    }
+  }
+}
+
+// 글로벌 네비게이터 키
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  tzdata.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Asia/Seoul'));
+
+  // 알림 플러그인 초기화
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const DarwinInitializationSettings initializationSettingsDarwin = DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+    requestCriticalPermission: true,
+  );
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsDarwin,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+  );
+
+  // iOS 알림 권한 요청
+  if (Platform.isIOS) {
+    final bool? result = await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+          critical: true,
+        );
+    debugPrint('iOS 알림 권한 요청 결과: $result');
+  }
+
+  // Android 알림 채널 설정
+  if (Platform.isAndroid) {
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'pillcare_notification_channel',
+      'PillCare 알림',
+      description: '약 복용 시간을 알려줍니다.',
+      importance: Importance.max,
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
+    );
+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+  }
 
   try {
     await dotenv.load(fileName: '.env');
@@ -72,7 +156,15 @@ class MyApp extends StatelessWidget {
             Locale('ko', 'KR'),
           ],
           navigatorObservers: [routeObserver],
+          navigatorKey: navigatorKey,
           home: const IntroScreen(),
+          routes: {
+            '/home': (context) => const HomeScreen(),
+            '/medicine_info': (context) {
+              final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+              return MedicineInfoScreen(pillData: args);
+            },
+          },
         );
       },
     );

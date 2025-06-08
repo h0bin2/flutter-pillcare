@@ -1,4 +1,3 @@
-
 // TODO Implement this library.
 
 import 'package:intl/intl.dart';
@@ -12,6 +11,7 @@ class ConsultationInfo {
   final DateTime updatedAt;
   final String status;
   final String history;
+  final String? pillName;
   // final String? pharmacyPhoneNumber; // FastAPI 스키마에 추가되면 주석 해제
 
   ConsultationInfo({
@@ -23,6 +23,7 @@ class ConsultationInfo {
     required this.updatedAt,
     required this.status,
     required this.history,
+    this.pillName,
     // this.pharmacyPhoneNumber,
   });
 
@@ -36,6 +37,7 @@ class ConsultationInfo {
       updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
       status: json['status'] as String? ?? '정보 없음',
       history: json['history'] as String? ?? '내역 없음',
+      pillName: json['pill_name'] as String?,
       // pharmacyPhoneNumber: json['pharmacy_phone'] as String?, // FastAPI 스키마에 추가되면 주석 해제
     );
   }

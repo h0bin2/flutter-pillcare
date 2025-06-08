@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pharmacy_screen.dart';
 
 class SubscriptionFormScreen extends StatefulWidget {
   final Map<String, dynamic> pharmacy;
@@ -20,11 +21,15 @@ class _SubscriptionFormScreenState extends State<SubscriptionFormScreen> {
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: 신청서 제출 로직 구현
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('신청서가 제출되었습니다!')),
+      // addConsultationHistory 호출
+      await addConsultationHistory(
+        context,
+        widget.pharmacy,
+        _symptomController.text, // history
+        'subscribe',
+        pillName: _medicineController.text,
       );
       Navigator.pop(context);
     }
@@ -34,9 +39,22 @@ class _SubscriptionFormScreenState extends State<SubscriptionFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '${widget.pharmacy['name']} 정기구독 신청서',
-          style: TextStyle(fontFamily: 'NotoSansKR', fontSize: 28, fontWeight: FontWeight.bold),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              widget.pharmacy['name'] ?? '',
+              style: TextStyle(fontFamily: 'NotoSansKR', fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 2),
+            Text(
+              '정기구독 신청서',
+              style: TextStyle(fontFamily: 'NotoSansKR', fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
+            ),
+          ],
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -66,7 +84,7 @@ class _SubscriptionFormScreenState extends State<SubscriptionFormScreen> {
               TextFormField(
                 controller: _symptomController,
                 decoration: InputDecoration(
-                  labelText: '증상(선택)',
+                  labelText: '증상',
                   labelStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, fontFamily: 'NotoSansKR'),
                   border: OutlineInputBorder(),
                 ),

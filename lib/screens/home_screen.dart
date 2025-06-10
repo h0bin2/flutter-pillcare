@@ -407,23 +407,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 알림 스케줄링 함수
   Future<void> _scheduleNotification(DateTime scheduledTime, Map<String, dynamic> pillData, bool isDailyRepeat, List<bool> selectedDays) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+    const AndroidNotificationDetails androidPlatformChannelChannelSpecifics = AndroidNotificationDetails(
       'pillcare_notification_channel',
       'PillCare 알림',
       channelDescription: '약 복용 시간을 알려줍니다.',
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
+      icon: '@mipmap/ic_launcher', // Android 알림 아이콘 설정
     );
-    const DarwinNotificationDetails iosPlatformChannelSpecifics = DarwinNotificationDetails();
+    const DarwinNotificationDetails iosPlatformChannelSpecifics = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
+      android: androidPlatformChannelChannelSpecifics,
       iOS: iosPlatformChannelSpecifics,
     );
 
     final String pillName = pillData['pill_name'] ?? '이름 모름';
-    // 현재 시간과 스케줄링할 시간 비교하여 ID 생성 (고유하게)
-    final int notificationId = scheduledTime.millisecondsSinceEpoch ~/ 1000; // 고유한 ID
+    final int baseNotificationId = scheduledTime.millisecondsSinceEpoch ~/ 1000; // 고유한 ID
     final String title = '약 복용 시간 알림';
     final String body = '${pillName} 복용 시간입니다!';
     final String payload = jsonEncode(pillData); // pillData를 JSON 문자열로 인코딩하여 payload에 저장
@@ -432,10 +436,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final seoul = tz.getLocation('Asia/Seoul');
     final scheduledKST = tz.TZDateTime.from(scheduledTime, seoul);
 
+    List<int> scheduledIds = []; // 이 목록에 스케줄된 모든 알림 ID를 저장합니다.
+
     if (isDailyRepeat) {
       // 매일 반복 알림
       await flutterLocalNotificationsPlugin.zonedSchedule(
-        notificationId,
+        baseNotificationId,
         title,
         body,
         scheduledKST,
@@ -445,6 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
         matchDateTimeComponents: DateTimeComponents.time,
         payload: payload,
       );
+      scheduledIds.add(baseNotificationId);
     } else {
       // 선택된 요일에만 알림
       for (int i = 0; i < 7; i++) {
@@ -452,8 +459,9 @@ class _HomeScreenState extends State<HomeScreen> {
           final dayOffset = (i + 1) % 7; // 월요일이 1, 일요일이 7
           final notificationTime = scheduledKST.add(Duration(days: dayOffset));
           
+          final int notificationIdForDay = baseNotificationId + i; // 각 요일마다 다른 ID 사용
           await flutterLocalNotificationsPlugin.zonedSchedule(
-            notificationId + i, // 각 요일마다 다른 ID 사용
+            notificationIdForDay,
             title,
             body,
             notificationTime,
@@ -463,6 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
             matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
             payload: payload,
           );
+          scheduledIds.add(notificationIdForDay);
         }
       }
     }
@@ -476,7 +485,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     
     alarms.add({
-      'id': notificationId,
+      'id': baseNotificationId, // 기존 호환성을 위해 base ID 유지
+      'scheduledNotificationIds': scheduledIds, // 새로 추가된 필드
       'time': scheduledKST.toIso8601String(),
       'pillName': pillName,
       'pillData': pillData,
@@ -487,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await prefs.setString('alarms', json.encode(alarms));
     
     if (kDebugMode) {
-      print('[HomeScreen] Notification scheduled for $pillName at $scheduledKST');
+      print('[HomeScreen] Notification scheduled for $pillName at $scheduledKST with IDs: $scheduledIds');
       print('Daily repeat: $isDailyRepeat');
       if (!isDailyRepeat) {
         print('Selected days: ${selectedDays.asMap().entries.where((e) => e.value).map((e) => ['월', '화', '수', '목', '금', '토', '일'][e.key]).join(', ')}');

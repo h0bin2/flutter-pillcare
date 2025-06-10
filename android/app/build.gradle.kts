@@ -44,3 +44,7 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("com.kakao.sdk:v2-user:2.19.0")
+}

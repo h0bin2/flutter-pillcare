@@ -716,7 +716,11 @@
       "languageVersion": "3.7"
     }
   ],
+
   "generated": "2025-06-08T11:09:42.307130Z",
+
+  "generated": "2025-06-08T16:40:49.200898Z",
+
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///C:/flutter",

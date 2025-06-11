@@ -34,7 +34,18 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
   }
 
   Future<void> _deleteAlarm(int id) async {
-    await _notifications.cancel(id);
+    // 해당 알림의 scheduledNotificationIds를 찾아서 모두 취소합니다.
+    final alarmToDelete = _alarms.firstWhere((alarm) => alarm['id'] == id, orElse: () => {});
+    if (alarmToDelete.isNotEmpty && alarmToDelete.containsKey('scheduledNotificationIds')) {
+      List<int> scheduledIds = List<int>.from(alarmToDelete['scheduledNotificationIds']);
+      for (int scheduledId in scheduledIds) {
+        await _notifications.cancel(scheduledId);
+      }
+    } else {
+      // 이전 버전의 알림 데이터 호환성 (단일 ID만 있는 경우)
+      await _notifications.cancel(id);
+    }
+
     setState(() {
       _alarms.removeWhere((alarm) => alarm['id'] == id);
     });
@@ -42,14 +53,24 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
     await prefs.setString('alarms', json.encode(_alarms));
   }
 
-  Future<void> _updateAlarm(Map<String, dynamic> alarm, DateTime newTime) async {
-    // 기존 알림 취소
-    await _notifications.cancel(alarm['id']);
+  Future<void> _updateAlarm(Map<String, dynamic> alarm, DateTime newTime, bool isDailyRepeat, List<bool> selectedDays) async {
+    // 기존 알림의 모든 스케줄된 ID를 취소합니다.
+    if (alarm.containsKey('scheduledNotificationIds')) {
+      List<int> oldScheduledIds = List<int>.from(alarm['scheduledNotificationIds']);
+      for (int oldId in oldScheduledIds) {
+        await _notifications.cancel(oldId);
+      }
+    } else {
+      // 이전 버전의 알림 데이터 호환성
+      await _notifications.cancel(alarm['id']);
+    }
 
-    // 새로운 알림 ID 생성
-    final int newId = newTime.millisecondsSinceEpoch ~/ 1000;
+    // 새로운 알림 ID 생성 (base ID)
+    final int newBaseId = newTime.millisecondsSinceEpoch ~/ 1000;
 
-    // 새로운 알림 스케줄링
+    // 새로운 알림 스케줄링 및 ID 저장
+    List<int> newScheduledIds = [];
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'pillcare_notification_channel',
       'PillCare 알림',
@@ -57,8 +78,13 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
+      icon: '@mipmap/ic_launcher',
     );
-    const DarwinNotificationDetails iosPlatformChannelSpecifics = DarwinNotificationDetails();
+    const DarwinNotificationDetails iosPlatformChannelSpecifics = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: iosPlatformChannelSpecifics,
@@ -73,17 +99,41 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
     final seoul = tz.getLocation('Asia/Seoul');
     final scheduledKST = tz.TZDateTime.from(newTime, seoul);
 
-    await _notifications.zonedSchedule(
-      newId,
-      title,
-      body,
-      scheduledKST,
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-      payload: payload,
-    );
+    if (isDailyRepeat) {
+      await _notifications.zonedSchedule(
+        newBaseId,
+        title,
+        body,
+        scheduledKST,
+        platformChannelSpecifics,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: payload,
+      );
+      newScheduledIds.add(newBaseId);
+    } else {
+      for (int i = 0; i < 7; i++) {
+        if (selectedDays[i]) {
+          final dayOffset = (i + 1) % 7; // 월요일이 1, 일요일이 7
+          final notificationTime = scheduledKST.add(Duration(days: dayOffset));
+          
+          final int notificationIdForDay = newBaseId + i;
+          await _notifications.zonedSchedule(
+            notificationIdForDay,
+            title,
+            body,
+            notificationTime,
+            platformChannelSpecifics,
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+            payload: payload,
+          );
+          newScheduledIds.add(notificationIdForDay);
+        }
+      }
+    }
 
     // SharedPreferences 업데이트
     setState(() {
@@ -91,8 +141,11 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
       if (index != -1) {
         _alarms[index] = {
           ...alarm,
-          'id': newId,
+          'id': newBaseId, // 기본 ID 업데이트
+          'scheduledNotificationIds': newScheduledIds, // 스케줄된 모든 ID 업데이트
           'time': scheduledKST.toIso8601String(),
+          'isDailyRepeat': isDailyRepeat,
+          'selectedDays': selectedDays,
         };
       }
     });
@@ -342,7 +395,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
                           hour = 0;
                         }
 
-                        DateTime newTime = DateTime(
+                        DateTime newProposedTime = DateTime(
                           now.year,
                           now.month,
                           now.day,
@@ -350,12 +403,12 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
                           selectedMinute,
                         );
 
-                        if (newTime.isBefore(now)) {
-                          newTime = newTime.add(const Duration(days: 1));
+                        if (newProposedTime.isBefore(now)) {
+                          newProposedTime = newProposedTime.add(const Duration(days: 1));
                         }
 
                         // 알림 업데이트
-                        _updateAlarmWithRepeat(alarm, newTime, isDailyRepeat, selectedDays);
+                        _updateAlarm(alarm, newProposedTime, isDailyRepeat, selectedDays);
                         Navigator.pop(context);
                         
                         String repeatText = isDailyRepeat 
@@ -367,7 +420,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${alarm['pillName'] ?? '약'} 알림이 ${DateFormat('a h:mm', 'ko_KR').format(newTime)}에 $repeatText로 수정되었습니다.'),
+                            content: Text('${alarm['pillName'] ?? '약'} 알림이 ${DateFormat('a h:mm', 'ko_KR').format(newProposedTime)}에 $repeatText로 수정되었습니다.'),
                             backgroundColor: const Color(0xFFFFD954),
                           ),
                         );
@@ -385,88 +438,6 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
         );
       },
     );
-  }
-
-  Future<void> _updateAlarmWithRepeat(Map<String, dynamic> alarm, DateTime newTime, bool isDailyRepeat, List<bool> selectedDays) async {
-    // 기존 알림 취소
-    await _notifications.cancel(alarm['id']);
-
-    // 새로운 알림 ID 생성
-    final int newId = newTime.millisecondsSinceEpoch ~/ 1000;
-
-    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'pillcare_notification_channel',
-      'PillCare 알림',
-      channelDescription: '약 복용 시간을 알려줍니다.',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-    );
-    const DarwinNotificationDetails iosPlatformChannelSpecifics = DarwinNotificationDetails();
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iosPlatformChannelSpecifics,
-    );
-
-    final String pillName = alarm['pillName'] ?? '이름 모름';
-    final String title = '약 복용 시간 알림';
-    final String body = '${pillName} 복용 시간입니다!';
-    final String payload = jsonEncode(alarm['pillData']);
-
-    final seoul = tz.getLocation('Asia/Seoul');
-    final scheduledKST = tz.TZDateTime.from(newTime, seoul);
-
-    if (isDailyRepeat) {
-      // 매일 반복 알림
-      await _notifications.zonedSchedule(
-        newId,
-        title,
-        body,
-        scheduledKST,
-        platformChannelSpecifics,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.time,
-        payload: payload,
-      );
-    } else {
-      // 선택된 요일에만 알림
-      for (int i = 0; i < 7; i++) {
-        if (selectedDays[i]) {
-          final dayOffset = (i + 1) % 7; // 월요일이 1, 일요일이 7
-          final notificationTime = scheduledKST.add(Duration(days: dayOffset));
-          
-          await _notifications.zonedSchedule(
-            newId + i, // 각 요일마다 다른 ID 사용
-            title,
-            body,
-            notificationTime,
-            platformChannelSpecifics,
-            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-            matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-            payload: payload,
-          );
-        }
-      }
-    }
-
-    // SharedPreferences 업데이트
-    setState(() {
-      final index = _alarms.indexWhere((a) => a['id'] == alarm['id']);
-      if (index != -1) {
-        _alarms[index] = {
-          ...alarm,
-          'id': newId,
-          'time': scheduledKST.toIso8601String(),
-          'isDailyRepeat': isDailyRepeat,
-          'selectedDays': selectedDays,
-        };
-      }
-    });
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('alarms', json.encode(_alarms));
   }
 
   String _formatTime(String isoTime) {

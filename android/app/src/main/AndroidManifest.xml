@@ -37,7 +37,7 @@
         <!-- 카카오 SDK 초기화 설정 -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
-            android:value="kakaof05090355f9d1379adbc5395f7165d18" />
+            android:value="f05090355f9d1379adbc5395f7165d18" />
 
         <!-- 카카오 로그인 콜백 액티비티 -->
         <activity
@@ -50,7 +50,7 @@
 
                 <!-- Redirect URI: "kakao{YOUR_NATIVE_APP_KEY}://oauth" -->
                 <data android:host="oauth"
-                    android:scheme="kakaof05090355f9d1379adbc5395f7165d18" />
+                    android:scheme="f05090355f9d1379adbc5395f7165d18" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
